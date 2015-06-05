@@ -1,0 +1,2 @@
+# python
+practic python code
