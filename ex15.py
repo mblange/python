@@ -2,7 +2,7 @@ from sys import argv
 
 script, filename = argv
 
-# open file and save contents to "txt"
+#this is a comment
 txt = open(filename)
 
 print "Here's your file %r:" % filename
