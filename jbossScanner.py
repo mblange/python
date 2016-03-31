@@ -38,7 +38,7 @@ def log(url):
 ports = args.ports
 
 # define vulnerable requests
-paths = ["/jmx-console/HtmlAdaptor?action=inspectMBean&name=jboss.system:type=ServerInfo","/web-console/ServerInfo.jsp","/invoker/JMXInvokerServlet"]
+paths = ["/web-console/Invoker","/jmx-console/HtmlAdaptor?action=inspectMBean&name=jboss.system:type=ServerInfo","/web-console/ServerInfo.jsp","/invoker/JMXInvokerServlet"]
 
 # create empty webServers list
 webServers = []
