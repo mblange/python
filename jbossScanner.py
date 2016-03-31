@@ -1,4 +1,7 @@
-## scan for jboss
+## a tool for identifying vulnerable JBoss Application Servers.
+## Author: Matt Lange
+## Date: 3/31/2016
+
 import threading
 import requests
 from netaddr import *
