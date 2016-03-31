@@ -15,29 +15,36 @@ ENDC = '\033[0m'
 
 # parse arguments
 ap = argparse.ArgumentParser(description='crappy "jexboss" vulnerability scanner v%s' % (__version__))
-group = ap.add_mutually_exclusive_group()
-ap.add_argument('network', help='CIDR notation of network to scan', default=None)
-group.add_argument('--ip', help='ip to scan', default=None)
+ap.add_argument('target', type=str, help='CIDR network or ip address', default=None)
+ap.add_argument('--ports', '-p', type=str, help='ports to scan', default='80,8080,8008,8000')
+ap.add_argument('--log', '-l',  help='write results to <file>', default='jBossScan.txt')
 args = ap.parse_args()
 
-#define a logging function (or class?)
-def log(url):
-	with open('scan_log.txt', 'a') as log:
-		 log.write("[*] VULNERABLE [*]%s\n" %(url))
-
-# accept and parse cidr
-srvs = []
-if args.ip:
-	srvs.append(args.ip)
+# store target argument into 'servers' list
+if '/' not in args.target:
+	servers = [args.target]
 else:
-	for net in IPNetwork(args.network).iter_hosts():
-		srvs.append(net)
-servers = [str(ip) for ip in srvs ]
-ports = '80,8080,8008,8000'
+	servers = [str(net) for net in IPNetwork(args.target).iter_hosts()]
+
+#define a logging function
+def log(url):
+	with open(args.log, 'a') as log:
+		log.write("[*] VULNERABLE [*]%s\n" %(url))
+
+# define ports to scan
+ports = args.ports
+
+# define vulnerable requests
+paths = ["/jmx-console/HtmlAdaptor?action=inspectMBean&name=jboss.system:type=ServerInfo","/web-console/ServerInfo.jsp","/invoker/JMXInvokerServlet"]
+
+# create empty webServers list
+webServers = []
 
 # scan for open web servers
 def portScan():
+	print"Scanning ports: %s" %ports
 	for server in servers:
+		print"Scanning: %s" %server
 		nm = NmapProcess(server, options="-sS -n -T4 -p%s" %ports)
 		rc = nm.run()
 		if rc != 0:
@@ -48,8 +55,6 @@ def portScan():
 				if service.open():
 					for path in paths:
 						webServers.append("%s:%s%s" % (host.address, service.port, path))
-webServers = []
-paths = ["/jmx-console/HtmlAdaptor?action=inspectMBean&name=jboss.system:type=ServerInfo","/web-console/ServerInfo.jsp","/invoker/JMXInvokerServlet"]
 	
 # thread vulnCheck
 def vCheck():
@@ -69,6 +74,6 @@ def vulnCheck(url):
 		print(RED + "[*] VULNERABLE [*] %s" % url + ENDC)
 		log(url)
 	else:
-		print (GREEN + "[+] OK: %s" % url + ENDC)
+		print(GREEN + "[+] OK: %s" % url + ENDC)
 portScan()
 vCheck()
