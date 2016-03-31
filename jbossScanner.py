@@ -5,12 +5,20 @@ from netaddr import *
 from sys import argv
 from libnmap.process import NmapProcess
 from libnmap.parser import NmapParser, NmapParserException
+import argparse
 
-script, subnet = argv
+__version__ = "0.1"
 
 RED = '\x1b[91m'
 GREEN = '\033[32m'
 ENDC = '\033[0m'
+
+# parse arguments
+ap = argparse.ArgumentParser(description='crappy "jexboss" vulnerability scanner v%s' % (__version__))
+group = ap.add_mutually_exclusive_group()
+ap.add_argument('network', help='CIDR notation of network to scan', default=None)
+group.add_argument('--ip', help='ip to scan', default=None)
+args = ap.parse_args()
 
 #define a logging function (or class?)
 def log(url):
@@ -19,11 +27,11 @@ def log(url):
 
 # accept and parse cidr
 srvs = []
-if '/' not in subnet:
-	srvs.append(subnet)
+if args.ip:
+	srvs.append(args.ip)
 else:
-	for ip in IPNetwork('%s' % subnet).iter_hosts():
-		srvs.append(ip)
+	for net in IPNetwork(args.network).iter_hosts():
+		srvs.append(net)
 servers = [str(ip) for ip in srvs ]
 ports = '80,8080,8008,8000'
 
