@@ -20,7 +20,7 @@ ENDC = '\033[0m'
 ap = argparse.ArgumentParser(description='crappy "jexboss" vulnerability scanner v%s' % (__version__))
 ap.add_argument('target', type=str, help='CIDR network or ip address', default=None)
 ap.add_argument('--ports', '-p', type=str, help='ports to scan', default='80,8080,8008,8000')
-ap.add_argument('--log', '-l',  help='write results to <file>', default='jBossScan.txt')
+ap.add_argument('--log', '-l',  help='write results to LOG', default='jBossScan.txt')
 args = ap.parse_args()
 
 # store target argument into 'servers' list
