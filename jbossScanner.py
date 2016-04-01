@@ -46,18 +46,16 @@ webServers = []
 # scan for open web servers
 def portScan():
 	print"Scanning ports: %s" %ports
-	for server in servers:
-		print"Scanning: %s" %server
-		nm = NmapProcess(server, options="-sS -n -T4 -p%s" %ports)
-		rc = nm.run()
-		if rc != 0:
-			print("nmap scan failed: {0}".format(nm.stderr))
-		parsed = NmapParser.parse(nm.stdout)
-		for host in parsed.hosts:
-			for service in host.services:
-				if service.open():
-					for path in paths:
-						webServers.append("%s:%s%s" % (host.address, service.port, path))
+	nm = NmapProcess(args.target, options="-sS -n -T4 -p%s" %ports)
+	rc = nm.run()
+	if rc != 0:
+		print("nmap scan failed: {0}".format(nm.stderr))
+	parsed = NmapParser.parse(nm.stdout)
+	for host in parsed.hosts:
+		for service in host.services:
+			if service.open():
+				for path in paths:
+					webServers.append("%s:%s%s" % (host.address, service.port, path))
 	
 # thread vulnCheck
 def vCheck():
@@ -71,7 +69,7 @@ def vCheck():
 
 # request vulnerable pages
 def vulnCheck(url):
-	r = requests.get('http://'+url,timeout=5)
+	r = requests.get('http://'+url,timeout=5,allow_redirects=False,verify=False)
 	status = r.status_code
 	if status == 200 or status == 500:
 		print(RED + "[*] VULNERABLE [*] %s" % url + ENDC)
