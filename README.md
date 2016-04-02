@@ -1,2 +1,2 @@
 # python
-practice python code
+python projects
