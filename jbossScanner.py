@@ -26,18 +26,21 @@ args = ap.parse_args()
 
 # validate target argument is a valid IP address
 try:
-	IP('args.target')
+	IPNetwork(args.target)
 except:
 	print '-' *60
 	print(RED + 'You entered an invalid IP address %s' %args.target + ENDC)
 	print '-' *60
 	ap.print_help()
 	exit()
+
 # store target argument into 'servers' list
-if '/' not in args.target:
-	servers = [args.target]
-else:
-	servers = [str(net) for net in IPNetwork(args.target).iter_hosts()]
+servers = [str(i) for i in IPNetwork(args.target).iter_hosts()]
+
+#if '/' not in args.target:
+#	servers = [args.target]
+#else:
+#	servers = [str(net) for net in IPNetwork(args.target).iter_hosts()]
 
 #define a logging function
 def log(url):
