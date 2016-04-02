@@ -9,6 +9,7 @@ from sys import argv
 from libnmap.process import NmapProcess
 from libnmap.parser import NmapParser, NmapParserException
 import argparse
+from IPy import IP
 
 __version__ = "0.1"
 
@@ -22,6 +23,12 @@ ap.add_argument('target', type=str, help='CIDR network or ip address', default=N
 ap.add_argument('--ports', '-p', type=str, help='an nmap-stlye, comma-separated list of ports to scan', default='80,8080,8008,8000')
 ap.add_argument('--log', '-l',  help='write results to LOG', default='jBossScan.txt')
 args = ap.parse_args()
+
+# validate target argument is a valid IP address
+try:
+	IP('target')
+except:
+	print(RED + 'You entered and invalid IP address' + ENDC)
 
 # store target argument into 'servers' list
 if '/' not in args.target:
