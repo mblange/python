@@ -26,10 +26,11 @@ args = ap.parse_args()
 
 # validate target argument is a valid IP address
 try:
-	IP('target')
+	IP('args.target')
 except:
-	print(RED + 'You entered and invalid IP address' + ENDC)
-
+	print(RED + 'You entered an invalid IP address %s' %args.target + ENDC)
+	ap.print_help()
+	exit()
 # store target argument into 'servers' list
 if '/' not in args.target:
 	servers = [args.target]
