@@ -5,11 +5,9 @@
 import threading
 import requests
 from netaddr import *
-from sys import argv
 from libnmap.process import NmapProcess
 from libnmap.parser import NmapParser, NmapParserException
 import argparse
-from IPy import IP
 
 __version__ = "0.1"
 
