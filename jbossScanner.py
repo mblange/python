@@ -40,11 +40,6 @@ servers = [str(i) for i in IPNetwork(args.target).iter_hosts()]
 #else:
 #	servers = [str(net) for net in IPNetwork(args.target).iter_hosts()]
 
-#define a logging function
-def log(url):
-	with open(args.log, 'a') as log:
-		log.write("[*] VULNERABLE [*]%s\n" %(url))
-
 # define ports to scan
 ports = args.ports
 
@@ -53,6 +48,11 @@ paths = ["/web-console/Invoker","/jmx-console/HtmlAdaptor?action=inspectMBean&na
 
 # create empty webServers list
 webServers = []
+
+#define a logging function
+def log(url):
+	with open(args.log, 'a') as log:
+		log.write("[*] VULNERABLE [*]%s\n" %(url))
 
 # scan for open web servers
 def portScan():
@@ -87,5 +87,10 @@ def vulnCheck(url):
 		log(url)
 	else:
 		print(GREEN + "[+] OK: %s" % url + ENDC)
-portScan()
-vCheck()
+
+def main():
+	portScan()
+	vCheck()
+
+if __name__ == '__main__':
+    main()
