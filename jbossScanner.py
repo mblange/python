@@ -31,13 +31,6 @@ except:
 	ap.print_help()
 	exit()
 
-## store target argument into 'servers' list and check if single ip or network
-#servers = [str(i) for i in IPNetwork(args.target).iter_hosts()]
-#if '/' not in args.target:
-#	servers = [args.target]
-#else:
-#	servers = [str(net) for net in IPNetwork(args.target).iter_hosts()]
-
 # define ports to scan
 ports = args.ports
 
@@ -50,7 +43,7 @@ webServers = []
 #define a logging function
 def log(url, status):
 	with open(args.log, 'a') as log:
-		if status == 'good':
+		if status:
 			log.write(GREEN + "[*] OK [*] %s\n" %(url) + ENDC)
 		else:
 			log.write(RED + "[*] VULNERABLE [*] %s\n" %(url) + ENDC)
@@ -90,10 +83,10 @@ def vulnCheck(url):
 	status = r.status_code
 	if status == 200 or status == 500:
 		print(RED + "[*] VULNERABLE [*] %s" % url + ENDC)
-		log(url, 'bad')
+		log(url, 0) 
 	else:
 		print(GREEN + "[+] OK: %s" % url + ENDC)
-		log(url, 'good')
+		log(url, 1) 
 
 def main():
 	portScan()
