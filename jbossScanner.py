@@ -31,9 +31,8 @@ except:
 	ap.print_help()
 	exit()
 
-# store target argument into 'servers' list
-servers = [str(i) for i in IPNetwork(args.target).iter_hosts()]
-
+## store target argument into 'servers' list and check if single ip or network
+#servers = [str(i) for i in IPNetwork(args.target).iter_hosts()]
 #if '/' not in args.target:
 #	servers = [args.target]
 #else:
@@ -58,18 +57,23 @@ def log(url, status):
 
 # scan for open web servers
 def portScan():
+	global parsed
 	print"Scanning ports: %s" %ports
 	nm = NmapProcess(args.target, options="-sS -n -T4 -p%s" %ports)
 	rc = nm.run()
 	if rc != 0:
 		print("nmap scan failed: {0}".format(nm.stderr))
 	parsed = NmapParser.parse(nm.stdout)
-#	for host in parsed.hosts:
-#		for service in host.services:
-#			if service.open():
-#				for path in paths:
-#					webServers.append("%s:%s%s" % (host.address, service.port, path))
-	webServers = [str(host.address) + ':' + str(service.port) + str(path) for host in parsed.hosts for service in host.services if service.open() for path in paths ]
+
+def makeURL():
+	for host in parsed.hosts:
+		for service in host.services:
+			if service.open():
+				for path in paths:
+					webServers.append("%s:%s%s" % (host.address, service.port, path))
+# attempt at comprehension. 
+# webServers = [str(host.address) + ':' + str(service.port) + str(path) for host in parsed.hosts for service in host.services if service.open() for path in paths ]
+
 # thread vulnCheck
 def vCheck():
 	Thread = threading.Thread
@@ -93,6 +97,7 @@ def vulnCheck(url):
 
 def main():
 	portScan()
+	makeURL()
 	vCheck()
 
 if __name__ == '__main__':
