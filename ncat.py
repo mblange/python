@@ -16,4 +16,4 @@ def ncat(hostname, port, content):
     print "Connection closed."
     s.close()
 
-rexec(hostname, port, content)
+ncat(hostname, port, content)
