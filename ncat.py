@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 
 import socket
+import argparse
 
-content = ("Hello")
+ap = argparse.ArgumentParser(description='This is ncat in python')
+ap.add_argument('hostname', type=str, help='hostname or IP address', default=None)
+ap.add_argument('port', type=int, help='port', default='80')
+ap.add_argument('--content', help='content to send', default='GET / HTTP/1.1\nHost: %s\n\n" %hostname')
+args = ap.parse_args()
 
 def ncat(hostname, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,4 +21,7 @@ def ncat(hostname, port, content):
     print "Connection closed."
     s.close()
 
-ncat(hostname, port, content)
+#hostname = "10.0.0.2"
+#port = 8000
+#content = "GET / HTTP/1.1\nHost: %s\n\n" %hostname
+ncat(args.hostname, args.port, args.content)
