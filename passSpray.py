@@ -12,13 +12,13 @@ import pip
 def install_dependancy(package):
     pip.main(['install', package])
 
-dependancies = ('argparse', 'ldap', 'active_directory')
+dependancies = {'argparse':'argparse', 'ldap':'python-ldap'}
 
-for d in dependancies:
+for key, value in dependancies.items():
     try:
-        import d
+        import key
     except ImportError, e:
-        install_dependancy(d)
+        install_dependancy(value)
 '''
 # Accept arguments
 ap = argparse.ArgumentParser(description='This is a password spraying tool')
