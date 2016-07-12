@@ -9,16 +9,25 @@
 # import stuff
 import pip
 
+#psuedocode...
+#sudo apt-get install libsasl2-dev python-dev libldap2-dev libssl-dev
+
 def install_dependancy(package):
     pip.main(['install', package])
 
+# create a dictionary of dependancies in the format 'import_format':'pip_install_format' 
 dependancies = {'argparse':'argparse', 'ldap':'python-ldap'}
 
 for key, value in dependancies.items():
     try:
         import key
-    except ImportError, e:
-        install_dependancy(value)
+    except ImportError:
+        try:
+            install_dependancy(value)
+            import key
+        except ImportError, e:
+            print e
+            
 '''
 # Accept arguments
 ap = argparse.ArgumentParser(description='This is a password spraying tool')
