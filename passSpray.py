@@ -20,32 +20,39 @@ dependancies = {'argparse':'argparse', 'ldap':'python-ldap'}
 
 for key, value in dependancies.items():
     try:
+	print "importing ", key
         import key
     except ImportError:
         try:
             install_dependancy(value)
+            print "importing ", key
             import key
         except ImportError, e:
             print e
-            
-'''
+
+'''            
 # Accept arguments
 ap = argparse.ArgumentParser(description='This is a password spraying tool')
 ap.add_argument('dc', type=str, help='domain controller', default=None)
 ap.add_argument('--password', '-p', type=str, help='password to spray', default='password')
 ap.add_argument('--log', '-l', help='write results to LOG', default='passSpray.log')
 args = ap.parse_args()
+'''
 
 # Logging?
 
+# Establish some variables
+    # discover DC's
+    # set username and password to use to connect to DC and pull user list
+    # set password to spray
+
 # Get domain username list
     # connect to DC
-    # request users
+    # request list of domain usernames
     # write to tmp file for later use
 
 
 # Spray passwords against DC
-    # connect to DC
-    # loop through users with a password
-    # log results
+    # reconnect to DC by looping through users with a password
+        # log results
 '''
