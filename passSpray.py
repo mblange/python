@@ -5,18 +5,18 @@
 # Matthew Lange
 # 6-22-2016
 ##########################
-import sys
-## import stuff
-dependancies = ['logging', 'argparse', 'ldap', 'subprocess', 'os']
 
-for d in dependancies:
-    try:
-		print "importing %s" %d
-		d = __import__(d)
-    except ImportError, e:
-		print "failed to import %s. Try 'pip install %s'" %(d, d)
-		print >> sys.stderr, "Exception: %s" % str(e)
-		sys.exit(1)
+## import stuff
+try:
+	import sys
+	import logging
+	import argparse
+	import ldap
+	import time
+
+except ImportError, e:
+	print "Exception: %s. Try 'pip install [module_name]'" % str(e)
+	sys.exit(1)
 
 ##psuedocode...
 #sudo apt-get install libsasl2-dev python-dev libldap2-dev libssl-dev
@@ -29,17 +29,19 @@ ap.add_argument('--log', '-l', help='write results to LOG', default='passSpray.l
 args = ap.parse_args()
 
 # Logging?
-def logger(oFunc):
+def logger(orig_func):
 	logging.basicConfig(filename='%s' %(args.log), level=logging.INFO)
 	def wrapper(*args, **kwargs):
-		logging.info('%s: Started' %(oFunc.__name__))
-		oFunc(*args, **kwargs)
-		logging.info('%s: Finished'%(oFunc.__name__))
+		logging.info('%s: Started at:\t%s' %(orig_func.__name__, time.asctime(time.localtime(time.time()))))
+		orig_func(*args, **kwargs)
+		logging.info('%s: Finished at:\t%s' %(orig_func.__name__, time.asctime(time.localtime(time.time()))))
 	return wrapper
 
 @logger
 def do_something(msg):
 	print msg
+
+do_something('hi')
 
 # Establish some variables
     # discover DC's
