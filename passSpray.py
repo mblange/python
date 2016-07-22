@@ -5,41 +5,41 @@
 # Matthew Lange
 # 6-22-2016
 ##########################
+import sys
+## import stuff
+dependancies = ['logging', 'argparse', 'ldap', 'subprocess', 'os']
 
-# import stuff
-import pip
+for d in dependancies:
+    try:
+		print "importing %s" %d
+		d = __import__(d)
+    except ImportError, e:
+		print "failed to import %s. Try 'pip install %s'" %(d, d)
+		print >> sys.stderr, "Exception: %s" % str(e)
+		sys.exit(1)
 
-#psuedocode...
+##psuedocode...
 #sudo apt-get install libsasl2-dev python-dev libldap2-dev libssl-dev
 
-def install_dependancy(package):
-    pip.main(['install', package])
-
-# create a dictionary of dependancies in the format 'import_format':'pip_install_format' 
-dependancies = {'argparse':'argparse', 'ldap':'python-ldap'}
-
-for key, value in dependancies.items():
-    try:
-	print "importing ", key
-        import key
-    except ImportError:
-        try:
-            install_dependancy(value)
-            print "importing ", key
-            import key
-        except ImportError, e:
-            print e
-
-'''            
 # Accept arguments
 ap = argparse.ArgumentParser(description='This is a password spraying tool')
 ap.add_argument('dc', type=str, help='domain controller', default=None)
 ap.add_argument('--password', '-p', type=str, help='password to spray', default='password')
 ap.add_argument('--log', '-l', help='write results to LOG', default='passSpray.log')
 args = ap.parse_args()
-'''
 
 # Logging?
+def logger(oFunc):
+	logging.basicConfig(filename='%s' %(args.log), level=logging.INFO)
+	def wrapper(*args, **kwargs):
+		logging.info('%s: Started' %(oFunc.__name__))
+		oFunc(*args, **kwargs)
+		logging.info('%s: Finished'%(oFunc.__name__))
+	return wrapper
+
+@logger
+def do_something(msg):
+	print msg
 
 # Establish some variables
     # discover DC's
@@ -55,4 +55,3 @@ args = ap.parse_args()
 # Spray passwords against DC
     # reconnect to DC by looping through users with a password
         # log results
-'''
