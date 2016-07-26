@@ -19,7 +19,7 @@ except ImportError, e:
 
 # Accept argument containing an Nmap xml 'file' to parse
 ap = argparse.ArgumentParser(description='parser to retrieve ports from nmap scan')
-ap.add_argument('file', type=str, help='nmap.xml output file to parse', default=None)
+ap.add_argument('--file', '-f',  type=str, help='nmap.xml output file to parse', required=True)
 args = ap.parse_args()
 
 # Parse the file and create 'obj' handler
