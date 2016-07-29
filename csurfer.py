@@ -6,7 +6,8 @@
 
 try:
 	import requests
-	from lxml import html
+	import lxml.html as lh
+	from io import StringIO
 except ImportError, e:
 	print "Exception: {}".format(str(e))
 	exit(1)
@@ -24,7 +25,7 @@ r = s.get(url)
 
 #print(r.text)
 #token = r.headers[token_header]
-tree = html.fromstring(r.content)
-a = tree.xpath('/html/body/hr/ul/li')
-print(a)
+tree = lh.fromstring(r.content)
+html = tree.xpath('//a[@href]/text()')
+print html
 # make second request with token
