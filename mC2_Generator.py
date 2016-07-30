@@ -8,7 +8,8 @@
 ############################################################
 
 import sys
-import lxml.objectify
+import lxml.objectify as lo
+from collections import defaultdict
 
 iocs = [
 'Network/URI',
@@ -18,10 +19,11 @@ iocs = [
 'PortItem/remoteIP'
 ]
 
-# Dictionary to map openIOC search value to CS MC2
-ioc_map = {'Network/URI':'', 'Network/UserAgent':'', 'Network/HTTP_Referr':'', 'Network/DNS':'', 'PortItem/remoteIP':''}
+# Create dictionary for storing ioc key-value pairs
+# defaultdict(list) makes duplicate keys store values in a list
+ioc_map = defaultdict(list)
 
-ioco = lxml.objectify.parse(sys.argv[1])
+ioco = lo.parse(sys.argv[1])
 root = ioco.getroot()
 
 print("Description:\n%s: %s"%(root.short_description, root.description))
@@ -31,7 +33,7 @@ print "\nHere's the IOCs we probably care about for MC2 Profile creation\n"
 for ii in root.xpath("//*[local-name()='IndicatorItem']"):
 	if ii.Context.attrib.get("search") in iocs:
 		print('\t%s\t%s\t%s'%(ii.getparent().attrib.get("operator"), ii.Context.attrib.get("search"),ii.Content))
-		ioc_map[ii.Context.attrib.get("search")] = ii.Content
+		ioc_map[ii.Context.attrib.get("search")].append(ii.Content)
 
 # Print all the IOCs
 print "\nHere's all the rest of the IOCs in this file\n"
