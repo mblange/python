@@ -10,9 +10,13 @@
 import sys
 import lxml.objectify as lo
 from collections import defaultdict
+import argparse
 
-# TODO: Add Argparse
-# accept argument to only parse and print the ioc file not create mc profile 
+# Accept arguments. Include option to only parse and print the ioc file not create mc profile 
+ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
+ap.add_argument('--mode', '-m', type=str, help='PARSE only? Or, parse and create PROFILE.', default='PARSE', required=True)
+ap.add_argument('--file', '-f', type=str, help='OpenIOC file', required=True)
+args = ap.parse_args()
 
 # List of IOCs that are useful in a CS MC2 Profile config
 iocs = [
@@ -24,7 +28,7 @@ iocs = [
 ]
 
 # Create dictionary for storing ioc key-value pairs
-# defaultdict(list) makes duplicate keys store values in a list
+# defaultdict(list) makes duplicate keys store values in a list 
 ioc_dict = defaultdict(list)
 
 def parse_ioc(ioc_in):
@@ -75,8 +79,8 @@ class mk_profile():
 
 	def server(self):
 		print "server"
-
-parse_ioc(sys.argv[1])
-print_ioc()
-print ioc_dict
-m = mk_profile(ioc_dict, 'test')
+if args.mode == 'PARSE':
+	parse_ioc(args.file)
+	print_ioc()
+	print ioc_dict
+	m = mk_profile(ioc_dict, 'test')
