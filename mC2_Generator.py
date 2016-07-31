@@ -13,8 +13,10 @@ from collections import defaultdict
 import argparse
 
 # Accept arguments. Include option to only parse and print the ioc file not create mc profile 
-ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
-ap.add_argument('--mode', '-m', type=str, help='PARSE only? Or, parse and create PROFILE.', default='PARSE', required=True)
+ap = argparse.ArgumentParser(prog='MC_Profiler', description='Parse OpenIOC files. Create CS MC2 Profile config files.')
+group = ap.add_mutually_exclusive_group()
+group.add_argument('--parse', '-m', type=str, help='PARSE only.', required=True)
+group.add_argument('--create', '-m', type=str, help='Parse and create PROFILE.', required=True)
 ap.add_argument('--file', '-f', type=str, help='OpenIOC file', required=True)
 args = ap.parse_args()
 
