@@ -11,6 +11,10 @@ import sys
 import lxml.objectify as lo
 from collections import defaultdict
 
+# TODO: Add Argparse
+# accept argument to only parse and print the ioc file not create mc profile 
+
+# List of IOCs that are useful in a CS MC2 Profile config
 iocs = [
 'Network/URI',
 'Network/UserAgent',
@@ -21,29 +25,58 @@ iocs = [
 
 # Create dictionary for storing ioc key-value pairs
 # defaultdict(list) makes duplicate keys store values in a list
-ioc_map = defaultdict(list)
+ioc_dict = defaultdict(list)
 
-ioco = lo.parse(sys.argv[1])
-root = ioco.getroot()
+def parse_ioc(ioc_in):
+	global root
+	ioco = lo.parse(ioc_in)
+	root = ioco.getroot()
+	return root
 
-print("Description:\n%s: %s"%(root.short_description, root.description))
-
-# Print & store values of the IOC keys we care about for MC2 Profiles
-print "\nHere's the IOCs we probably care about for MC2 Profile creation\n"
-for ii in root.xpath("//*[local-name()='IndicatorItem']"):
-	if ii.Context.attrib.get("search") in iocs:
-		print('\t%s\t%s\t%s'%(ii.getparent().attrib.get("operator"), ii.Context.attrib.get("search"),ii.Content))
-		ioc_map[ii.Context.attrib.get("search")].append(ii.Content)
-
-# Print all the IOCs
-print "\nHere's all the rest of the IOCs in this file\n"
-for ii in root.xpath("//*[local-name()='IndicatorItem']"):
-	if ii.Context.attrib.get("search") not in iocs:
-		print('\t%s\t%s\t%s'%(ii.getparent().attrib.get("operator"), ii.Context.attrib.get("search"),ii.Content))
-
-print ioc_map
-
-# TODO: write to CS MC2 Profile
-with open('new.profile', 'w') as file:
-	file.write(str(ioc_map))
+def print_ioc():
+	print("Description:\n%s: %s"%(root.short_description, root.description))
 	
+	# Print & store values of the IOC keys we care about for MC2 Profiles
+	print "\nHere's the IOCs we probably care about for MC2 Profile creation\n"
+	for i in root.xpath("//*[local-name()='IndicatorItem']"):
+		if i.Context.attrib.get("search") in iocs:
+			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
+			ioc_dict[i.Context.attrib.get("search")].append(i.Content)
+	
+	# Print all the IOCs
+	print "\nHere's all the rest of the IOCs in this file\n"
+	for i in root.xpath("//*[local-name()='IndicatorItem']"):
+		if i.Context.attrib.get("search") not in iocs:
+			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
+
+	return ioc_dict
+
+## TODO: write to CS MC2 Profile
+#with open('new.profile', 'w') as file:
+#	file.write(str(ioc_dict))
+
+class mk_profile():
+	def __init__(self, ioc_dict, filename): 
+		self.url = ioc_dict['Network/URI']
+		self.useragent = ioc_dict['Network/UserAgent']
+		self.referer = ioc_dict['Network/HTTP_Referr']
+		self.domain =  ioc_dict['Network/DNS']
+		self.ipaddress = ioc_dict['PortItem/remoteIP']
+		self.profile = '{}.profile'.format(filename)
+		
+	def http_get(self):
+		print "http_get"
+
+	def http_post(self):
+		print "http_post"
+
+	def client(self):
+		print "client"
+
+	def server(self):
+		print "server"
+
+parse_ioc(sys.argv[1])
+print_ioc()
+print ioc_dict
+m = mk_profile(ioc_dict, 'test')
