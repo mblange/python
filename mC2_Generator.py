@@ -7,17 +7,16 @@
 # 7-29-2016
 ############################################################
 
-import sys
 import lxml.objectify as lo
 from collections import defaultdict
 import argparse
 
 # Accept arguments. Include option to only parse and print the ioc file not create mc profile 
-ap = argparse.ArgumentParser(prog='MC_Profiler', description='Parse OpenIOC files. Create CS MC2 Profile config files.')
-group = ap.add_mutually_exclusive_group()
-group.add_argument('--parse', '-m', type=str, help='PARSE only.', required=True)
-group.add_argument('--create', '-m', type=str, help='Parse and create PROFILE.', required=True)
-ap.add_argument('--file', '-f', type=str, help='OpenIOC file', required=True)
+ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
+#group = ap.add_mutually_exclusive_group()
+ap.add_argument('iocFile', type=str, help='OpenIOC file')
+ap.add_argument('--parse', '-p', help='Only parse the OpenIOC file.')
+ap.add_argument('--create', '-c', help='Parse and create a CS MC2 Profile.')
 args = ap.parse_args()
 
 # List of IOCs that are useful in a CS MC2 Profile config
@@ -39,7 +38,8 @@ def parse_ioc(ioc_in):
 	root = ioco.getroot()
 	return root
 
-def print_ioc():
+def print_ioc(root):
+	global ioc_dict
 	print("Description:\n%s: %s"%(root.short_description, root.description))
 	
 	# Print & store values of the IOC keys we care about for MC2 Profiles
@@ -81,8 +81,13 @@ class mk_profile():
 
 	def server(self):
 		print "server"
-if args.mode == 'PARSE':
-	parse_ioc(args.file)
-	print_ioc()
+
+parse_ioc(args.iocFile)
+print_ioc(root)
+if args.parse:
+	exit(0)
+else:
+	m = mk_profile(ioc_dict, args.create)
 	print ioc_dict
-	m = mk_profile(ioc_dict, 'test')
+	m.useragent
+	m.http_post
