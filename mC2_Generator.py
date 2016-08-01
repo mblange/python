@@ -19,13 +19,20 @@ ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile.')
 args = ap.parse_args()
 
 # List of IOCs that are useful in a CS MC2 Profile config
-iocs = [
-'Network/URI',
-'Network/UserAgent',
-'Network/HTTP_Referr',
-'Network/DNS',
-'PortItem/remoteIP'
-]
+#iocs = [
+#'Network/URI',
+#'Network/UserAgent',
+#'Network/HTTP_Referr',
+#'Network/DNS',
+#'PortItem/remoteIP'
+#]
+iocs = {
+'Network/URI':'uri',
+'Network/UserAgent':'useragent',
+'Network/HTTP_Referr':'Referer',
+'Network/DNS':'??',
+'PortItem/remoteIP':'??'
+}
 
 def parse_ioc(ioc_in):
 	ioco = lo.parse(ioc_in)
@@ -35,7 +42,7 @@ def parse_ioc(ioc_in):
 def print_ioc(root):
 	# Create dictionary for storing ioc key-value pairs
 	# defaultdict(list) makes duplicate keys store values in a list 
-	print_ioc_dict = defaultdict(list)
+	temp_dict = defaultdict(list)
 	print("Description:\n%s: %s"%(root.short_description, root.description))
 	
 	# Print & store values of the IOC keys we care about for MC2 Profiles
@@ -43,26 +50,50 @@ def print_ioc(root):
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-			print_ioc_dict[i.Context.attrib.get("search")].append(i.Content)
-	
+			temp_dict[iocs[i.Context.attrib.get("search")]].append(i.Content)
+
 	# Print all the IOCs
 	print "\nHere's all the rest of the IOCs in this file\n"
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") not in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-	return print_ioc_dict
+
+	print temp_dict
+	return temp_dict
 
 class mk_profile():
 	def __init__(self, ioc_dict, filename): 
-		self.url = ioc_dict['Network/URI']
-		self.useragent = ioc_dict['Network/UserAgent']
-		self.referer = ioc_dict['Network/HTTP_Referr']
-		self.domain =  ioc_dict['Network/DNS']
-		self.ipaddress = ioc_dict['PortItem/remoteIP']
-		self.profile = '{}.profile'.format(filename)
-		
+		#self.uri = ioc_dict['uri']
+		#self.useragent = ioc_dict['useragent']
+		#self.Referer = ioc_dict['Referr']
+		#self.domain =  ioc_dict['domain']
+		#self.ipaddress = ioc_dict['ipaddress']
+		#self.profile = '{}.profile'.format(filename)
+		## create file here
+		#self.dictionary = defaultdict(list)
+		self.dictionary = {}
+		for key in ioc_dict.keys():
+			if key is 'uri':
+				self.dictionary[key] = ioc_dict[key]
+				print "printing uri version of self.dictionary:", self.dictionary
+			elif key is 'Referer':
+				#self.dictionary['http-get']['client']['header'][key] = ioc_dict[key]
+				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
+				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
+				print "printing Referer version of self.dictionary:", self.dictionary
+
+	def set_useragent(self):
+		if self.useragent:
+			with open(self.profile, "a") as f:
+				f.write('set useragent "' + self.useragent[0] + '";\n')
+	def set_header(self, name):
+		with open(self.profile, 'a') as f:
+			f.write('set header "' + name + '" ' + name[0] + '";\n')
+
 	def http_get(self):
-		print "http_get"
+		if self.referer:
+			with open(self.profile, "a") as f:
+				f.write('set useragent "' + self.useragent[0] + '";\n')
 
 	def http_post(self):
 		print "http_post"
@@ -73,18 +104,16 @@ class mk_profile():
 	def server(self):
 		print "server"
 
-	## TODO: write to CS MC2 Profile
-	#with open('new.profile', 'w') as file:
-	#	file.write(str(ioc_dict))
-
 def main():
 	global m # for testing only. delete this later 
+	global cs_dict
 	root = parse_ioc(args.iocFile)
-	ioc_dict = print_ioc(root)
+	cs_dict = print_ioc(root)
 	if args.write:
-		m = mk_profile(ioc_dict, args.write)
+		m = mk_profile(cs_dict, args.write)
 		print m.useragent
 		m.http_post()
+		m.set_useragent()
 	else:
 		pass
 
