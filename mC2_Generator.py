@@ -15,8 +15,7 @@ import argparse
 ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
 #group = ap.add_mutually_exclusive_group()
 ap.add_argument('iocFile', type=str, help='OpenIOC file')
-ap.add_argument('--parse', '-p', help='Only parse the OpenIOC file.')
-ap.add_argument('--create', '-c', help='Parse and create a CS MC2 Profile.')
+ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile.')
 args = ap.parse_args()
 
 # List of IOCs that are useful in a CS MC2 Profile config
@@ -28,18 +27,15 @@ iocs = [
 'PortItem/remoteIP'
 ]
 
-# Create dictionary for storing ioc key-value pairs
-# defaultdict(list) makes duplicate keys store values in a list 
-ioc_dict = defaultdict(list)
-
 def parse_ioc(ioc_in):
-	global root
 	ioco = lo.parse(ioc_in)
-	root = ioco.getroot()
-	return root
+	parse_root = ioco.getroot()
+	return parse_root
 
 def print_ioc(root):
-	global ioc_dict
+	# Create dictionary for storing ioc key-value pairs
+	# defaultdict(list) makes duplicate keys store values in a list 
+	print_ioc_dict = defaultdict(list)
 	print("Description:\n%s: %s"%(root.short_description, root.description))
 	
 	# Print & store values of the IOC keys we care about for MC2 Profiles
@@ -47,19 +43,14 @@ def print_ioc(root):
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-			ioc_dict[i.Context.attrib.get("search")].append(i.Content)
+			print_ioc_dict[i.Context.attrib.get("search")].append(i.Content)
 	
 	# Print all the IOCs
 	print "\nHere's all the rest of the IOCs in this file\n"
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") not in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-
-	return ioc_dict
-
-## TODO: write to CS MC2 Profile
-#with open('new.profile', 'w') as file:
-#	file.write(str(ioc_dict))
+	return print_ioc_dict
 
 class mk_profile():
 	def __init__(self, ioc_dict, filename): 
@@ -82,12 +73,20 @@ class mk_profile():
 	def server(self):
 		print "server"
 
-parse_ioc(args.iocFile)
-print_ioc(root)
-if args.parse:
-	exit(0)
-else:
-	m = mk_profile(ioc_dict, args.create)
-	print ioc_dict
-	m.useragent
-	m.http_post
+	## TODO: write to CS MC2 Profile
+	#with open('new.profile', 'w') as file:
+	#	file.write(str(ioc_dict))
+
+def main():
+	global m # for testing only. delete this later 
+	root = parse_ioc(args.iocFile)
+	ioc_dict = print_ioc(root)
+	if args.write:
+		m = mk_profile(ioc_dict, args.write)
+		print m.useragent
+		m.http_post()
+	else:
+		pass
+
+if __name__ == "__main__" :
+	main()
