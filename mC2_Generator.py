@@ -54,38 +54,56 @@ def print_ioc(root):
 
 class mk_profile():
 	def __init__(self, ioc_dict, filename): 
-		## create file here
+		## create file here?
 		self.profile = filename
-		self.dictionary = {}
+		self.dictionary = dict()
+		self.dictionary['preamble'] = dict() 
+		self.dictionary['http-get'] = dict() 
+		self.dictionary['http-get']['uri'] = dict()
+		self.dictionary['http-get']['client'] = dict()
+		self.dictionary['http-get']['server'] = dict()
+		self.dictionary['http-get']['client']['header'] = dict()
+		self.dictionary['http-get']['server']['header'] = dict()
+		self.dictionary['http-get']['client']['metadata'] = dict()
+		self.dictionary['http-get']['server']['output'] = dict()
+		self.dictionary['http-post'] = dict() 
+		self.dictionary['http-post']['uri'] = dict()
+		self.dictionary['http-post']['client'] = dict()
+		self.dictionary['http-post']['server'] = dict()
+		self.dictionary['http-post']['client']['header'] = dict()
+		self.dictionary['http-post']['server']['header'] = dict()
+		self.dictionary['http-post']['client']['output'] = dict()
+		self.dictionary['http-post']['server']['output'] = dict()
+		self.dictionary['http-post']['client']['id'] = dict()
+		u = list()
+		h = list()
+		ua = list()
 		for key in ioc_dict.keys():
-			if key is 'uri':
-				#OLD: self.dictionary[key] = ioc_dict[key]
-				self.dictionary.update({'http-get':{key:ioc_dict[key]}})
-				self.dictionary.update({'http-get':{key:ioc_dict[key]}})
-#			elif key is 'Referer':
-#				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
-#				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
+			if key is 'Referer':
+				h.append(ioc_dict[key])
 			elif key is 'ipaddress':
-				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
-				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
-			elif key is 'useragent':
-				self.dictionary.update({'preamble':{key:ioc_dict[key]}})
+				h.append(ioc_dict[key])
+
+		self.dictionary['http-get']['client']['header'] = h
+		self.dictionary['http-post']['client']['header'] = h
+		self.dictionary['http-get']['uri'] = ioc_dict['uri']
+		self.dictionary['http-post']['uri'] = ioc_dict['uri']
+		self.dictionary['useragent'] = ioc_dict['useragent']
+
+		self.dictionary['preamble'] = ua
 
 	def write_preamble(self, profile):
-		#for k, v in self.dictionary['preamble'].iteritems():
-		for k, v in self.dictionary.get('preamble', {}).iteritems():
-			profile.write('set %s "%s;"\n' %(k, v[0]))
+		for k, v in self.dictionary['useragent']:
+			profile.write('set %s "%s;"\n' %(k, v))
 	def write_http_get(self, profile):
-		for k, v in self.dictionary.get('http-get', {}).iteritems():
-			profile.write('set %s;\n' %(k, v[0]))
-	def set_header(self, name):
-		with open(self.profile, 'a') as f:
-			f.write('set header "' + name + '" ' + name[0] + '";\n')
+		for k, v in self.dictionary.get('http-get', []).iteritems():
+			profile.write('set %s %s;\n' %(k, v))
+'''
+	def set_header(self, profile):
 
 	def http_get(self):
-		if self.referer:
-			with open(self.profile, "a") as f:
-				f.write('set useragent "' + self.useragent[0] + '";\n')
+		for k, v in self.dictionary.get('http-get', []).iteritems():
+			profile.write('set useragent "' + self.useragent[0] + '";\n')
 
 	def http_post(self):
 		print "http_post"
@@ -95,6 +113,7 @@ class mk_profile():
 
 	def server(self):
 		print "server"
+'''
 
 def main():
 	global m # for testing only. delete this later 
@@ -103,6 +122,7 @@ def main():
 	cs_dict = print_ioc(root)
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
+		print m.dictionary
 		with open(m.profile, 'a') as f:
 			m.write_preamble(f)
 			m.write_http_get(f)
