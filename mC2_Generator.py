@@ -59,7 +59,8 @@ class mk_profile():
 		self.dictionary = {}
 		for key in ioc_dict.keys():
 			if key is 'uri':
-				self.dictionary[key] = ioc_dict[key]
+				#self.dictionary[key] = ioc_dict[key]
+				self.dictionary.update({'http-get':{key:ioc_dict[key]}})
 			elif key is 'Referer':
 				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
 				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
@@ -67,12 +68,11 @@ class mk_profile():
 				self.dictionary.update({'preamble':{key:ioc_dict[key]}})
 
 	def write_preamble(self, profile):
-		for k, v in self.dictionary['preamble'].iteritems():
-			profile.write('set %s "%s;"' %(k, v[0]))
+		#for k, v in self.dictionary['preamble'].iteritems():
+		for k, v in self.dictionary.get('preamble', {}).iteritems():
+			profile.write('set %s "%s;"\n' %(k, v[0]))
 	def write_http_get(self, profile):
-###### PROBLEM on next line.... "KeyError: 'http-get'"###################
-###### dictionay isn't populated with anything except the preamble because ioc file has only useragent (i think?)
-		for k, v in self.dictionary['http-get'].iteritems():
+		for k, v in self.dictionary.get('http-get', {}).iteritems():
 			profile.write('set %s;\n' %(k, v[0]))
 	def set_header(self, name):
 		with open(self.profile, 'a') as f:
