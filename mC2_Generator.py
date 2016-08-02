@@ -13,19 +13,11 @@ import argparse
 
 # Accept arguments. Include option to only parse and print the ioc file not create mc profile 
 ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
-#group = ap.add_mutually_exclusive_group()
 ap.add_argument('iocFile', type=str, help='OpenIOC file')
 ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile.')
 args = ap.parse_args()
 
-# List of IOCs that are useful in a CS MC2 Profile config
-#iocs = [
-#'Network/URI',
-#'Network/UserAgent',
-#'Network/HTTP_Referr',
-#'Network/DNS',
-#'PortItem/remoteIP'
-#]
+# Dictionary of IOCs that are useful in a CS MC2 Profile config mapped to CS MC2 keywords
 iocs = {
 'Network/URI':'uri',
 'Network/UserAgent':'useragent',
@@ -40,8 +32,7 @@ def parse_ioc(ioc_in):
 	return parse_root
 
 def print_ioc(root):
-	# Create dictionary for storing ioc key-value pairs
-	# defaultdict(list) makes duplicate keys store values in a list 
+	# Create dictionary to store ioc key-value pairs. defaultdict(list) stores dup keys values as a list 
 	temp_dict = defaultdict(list)
 	print("Description:\n%s: %s"%(root.short_description, root.description))
 	
@@ -50,42 +41,39 @@ def print_ioc(root):
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
+			# and add them to our dictionary
 			temp_dict[iocs[i.Context.attrib.get("search")]].append(i.Content)
 
-	# Print all the IOCs
+	# Print all the remaining IOCs
 	print "\nHere's all the rest of the IOCs in this file\n"
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") not in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
 
-	print temp_dict
 	return temp_dict
 
 class mk_profile():
 	def __init__(self, ioc_dict, filename): 
-		#self.uri = ioc_dict['uri']
-		#self.useragent = ioc_dict['useragent']
-		#self.Referer = ioc_dict['Referr']
-		#self.domain =  ioc_dict['domain']
-		#self.ipaddress = ioc_dict['ipaddress']
-		#self.profile = '{}.profile'.format(filename)
 		## create file here
-		#self.dictionary = defaultdict(list)
+		self.profile = filename
 		self.dictionary = {}
 		for key in ioc_dict.keys():
 			if key is 'uri':
 				self.dictionary[key] = ioc_dict[key]
-				print "printing uri version of self.dictionary:", self.dictionary
 			elif key is 'Referer':
-				#self.dictionary['http-get']['client']['header'][key] = ioc_dict[key]
 				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
 				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
-				print "printing Referer version of self.dictionary:", self.dictionary
+			elif key is 'useragent':
+				self.dictionary.update({'preamble':{key:ioc_dict[key]}})
 
-	def set_useragent(self):
-		if self.useragent:
-			with open(self.profile, "a") as f:
-				f.write('set useragent "' + self.useragent[0] + '";\n')
+	def write_preamble(self, profile):
+		for k, v in self.dictionary['preamble'].iteritems():
+			profile.write('set %s "%s;"' %(k, v[0]))
+	def write_http_get(self, profile):
+###### PROBLEM on next line.... "KeyError: 'http-get'"###################
+###### dictionay isn't populated with anything except the preamble because ioc file has only useragent (i think?)
+		for k, v in self.dictionary['http-get'].iteritems():
+			profile.write('set %s;\n' %(k, v[0]))
 	def set_header(self, name):
 		with open(self.profile, 'a') as f:
 			f.write('set header "' + name + '" ' + name[0] + '";\n')
@@ -111,9 +99,9 @@ def main():
 	cs_dict = print_ioc(root)
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
-		print m.useragent
-		m.http_post()
-		m.set_useragent()
+		with open(m.profile, 'a') as f:
+			m.write_preamble(f)
+			m.write_http_get(f)
 	else:
 		pass
 
