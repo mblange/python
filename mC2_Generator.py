@@ -23,7 +23,7 @@ iocs = {
 'Network/UserAgent':'useragent',
 'Network/HTTP_Referr':'Referer',
 'Network/DNS':'??',
-'PortItem/remoteIP':'??'
+'PortItem/remoteIP':'ipaddress'
 }
 
 def parse_ioc(ioc_in):
@@ -59,9 +59,13 @@ class mk_profile():
 		self.dictionary = {}
 		for key in ioc_dict.keys():
 			if key is 'uri':
-				#self.dictionary[key] = ioc_dict[key]
+				#OLD: self.dictionary[key] = ioc_dict[key]
 				self.dictionary.update({'http-get':{key:ioc_dict[key]}})
-			elif key is 'Referer':
+				self.dictionary.update({'http-get':{key:ioc_dict[key]}})
+#			elif key is 'Referer':
+#				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
+#				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
+			elif key is 'ipaddress':
 				self.dictionary.update({'http-get':{'client':{'header':{key:ioc_dict[key]}}}})
 				self.dictionary.update({'http-post':{'client':{'header':{key:ioc_dict[key]}}}})
 			elif key is 'useragent':
