@@ -80,8 +80,8 @@ class mk_profile():
 		# insert values into dictionary
 		self.dictionary['http-get']['client']['header']['Referer'] = ioc_dict['Referer']
 		self.dictionary['http-post']['client']['header']['Referer'] = ioc_dict['Referer']
-		self.dictionary['http-get']['client']['header']['Host:'] = ioc_dict['Host:']
-		self.dictionary['http-post']['client']['header']['Host:'] = ioc_dict['Host:']
+		self.dictionary['http-get']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['http-post']['client']['header']['Host'] = ioc_dict['Host']
 		self.dictionary['http-get']['uri'] = ioc_dict['uri']
 		self.dictionary['http-post']['uri'] = ioc_dict['uri']
 		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
@@ -90,36 +90,67 @@ class mk_profile():
 	def write_preamble(self, profile):
 		for k, v in self.dictionary['preamble'].iteritems():
 			if v:
-				profile.write('set %s "%s;"\n' %(k, v))
+				profile.write('set %s "%s";\n' %(k, v))
 			else:
 				break
+	def write_header(self, d, a_list):
+		for k, v in d.iteritems():
+			if isinstance(v, dict):
+				a_list.append(k)
+				write_header(v, a_list)
+			else:
+				a_list.append({k:v})
 
 	def write_http_get(self, profile):
-		l = list()
-		profile.write('http-get {\n\turi %s\n\t' %self.dictionary['http-get']['uri'])
-		def write_header(d):
-			for k, v in d.iteritems():
-				if isinstance(v, dict):
-					l.append(v)
-					write_header(v)
-		#	profile.write('client {\n\t\t%s %s %s;\n\t' %(k, key, val))
-		#		else:
-		#			profile.write('%s %s;\n' %(k, v))
+		cl = list()
+		sl = list()
+
+		# Write the http-get container head and URI
+		profile.write('http-get {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
+
+		# Write the client section
+		self.write_header(self.dictionary['http-get']['client']['header'], cl)
+		profile.write('\tclient {\n') 
+		for i in cl:
+			profile.write('\t\theader %s;\n' %i)
+		profile.write('\t\tmetadata {\n\t\t\tbase64;\n\t\t\theader "Cookie";\n\t\t}\n') 
+		profile.write('\t}\n') 
+
+		# Write the server section
+		self.write_header(self.dictionary['http-get']['server']['header'], sl)
+		profile.write('\tserver {\n') 
+		for i in sl:
+			profile.write('\t\theader %s;\n' %str(i))
+		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
+		profile.write('\t}\n}\n') 
+
+	def write_http_post(self, profile):
+		cl = list()
+		sl = list()
+
+		# Write the http-post container head and URI
+		profile.write('http-post {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
+
+		# Write the client section
+		self.write_header(self.dictionary['http-post']['client']['header'], cl)
+		profile.write('\tclient {\n') 
+		for i in cl:
+			profile.write('\t\theader %s;\n' %i)
+		profile.write('\t\tid {\n\t\t\tparameter "id";\n\t\t}\n')
+		profile.write('\t\toutput {\n\t\t\tprint;\n\t\t}\n')
+		profile.write('\t\t}\n') 
+
+		# Write the server section
+		self.write_header(self.dictionary['http-post']['server']['header'], sl)
+		profile.write('\tserver {\n') 
+		for i in sl:
+			profile.write('\t\theader %s;\n' %str(i))
+		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
+		profile.write('\t\t}\n}\n') 
 '''
-	def set_header(self, profile):
-
-	def http_get(self):
-		for k, v in self.dictionary.get('http-get', []).iteritems():
-			profile.write('set useragent "' + self.useragent[0] + '";\n')
-
 	def http_post(self):
 		print "http_post"
 
-	def client(self):
-		print "client"
-
-	def server(self):
-		print "server"
 '''
 
 def main():
@@ -133,6 +164,7 @@ def main():
 		with open(m.profile, 'a') as f:
 			m.write_preamble(f)
 			m.write_http_get(f)
+			m.write_http_post(f)
 	else:
 		pass
 
