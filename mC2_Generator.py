@@ -95,13 +95,16 @@ class mk_profile():
 				break
 
 	def write_http_get(self, profile):
+		l = list()
 		profile.write('http-get {\n\turi %s\n\t' %self.dictionary['http-get']['uri'])
-		for k, v in self.dictionary['http-get']['client'].iteritems():
-			if isinstance(v, dict):
-				for key, val in v.iteritems():
-					profile.write('client {\n\t\t%s %s %s;\n\t' %(k, key, val))
-			else:
-				profile.write('%s %s;\n' %(k, v))
+		def write_header(d):
+			for k, v in d.iteritems():
+				if isinstance(v, dict):
+					l.append(v)
+					write_header(v)
+		#	profile.write('client {\n\t\t%s %s %s;\n\t' %(k, key, val))
+		#		else:
+		#			profile.write('%s %s;\n' %(k, v))
 '''
 	def set_header(self, profile):
 
