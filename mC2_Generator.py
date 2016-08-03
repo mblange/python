@@ -15,6 +15,7 @@ import argparse
 ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
 ap.add_argument('iocFile', type=str, help='OpenIOC file')
 ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile.')
+ap.add_argument('--sleeptime', '-s', help='set sleeptime value for CS', default=30000)
 args = ap.parse_args()
 
 # Dictionary of IOCs that are useful in a CS MC2 Profile config mapped to CS MC2 keywords
@@ -23,7 +24,7 @@ iocs = {
 'Network/UserAgent':'useragent',
 'Network/HTTP_Referr':'Referer',
 'Network/DNS':'??',
-'PortItem/remoteIP':'ipaddress'
+'PortItem/remoteIP':'Host:'
 }
 
 def parse_ioc(ioc_in):
@@ -55,7 +56,8 @@ def print_ioc(root):
 class mk_profile():
 	def __init__(self, ioc_dict, filename): 
 		## create file here?
-		self.profile = filename
+		self.profile = '{}.profile'.format(filename)
+		# create dictionary
 		self.dictionary = dict()
 		self.dictionary['preamble'] = dict() 
 		self.dictionary['http-get'] = dict() 
@@ -75,29 +77,31 @@ class mk_profile():
 		self.dictionary['http-post']['client']['output'] = dict()
 		self.dictionary['http-post']['server']['output'] = dict()
 		self.dictionary['http-post']['client']['id'] = dict()
-		u = list()
-		h = list()
-		ua = list()
-		for key in ioc_dict.keys():
-			if key is 'Referer':
-				h.append(ioc_dict[key])
-			elif key is 'ipaddress':
-				h.append(ioc_dict[key])
-
-		self.dictionary['http-get']['client']['header'] = h
-		self.dictionary['http-post']['client']['header'] = h
+		# insert values into dictionary
+		self.dictionary['http-get']['client']['header']['Referer'] = ioc_dict['Referer']
+		self.dictionary['http-post']['client']['header']['Referer'] = ioc_dict['Referer']
+		self.dictionary['http-get']['client']['header']['Host:'] = ioc_dict['Host:']
+		self.dictionary['http-post']['client']['header']['Host:'] = ioc_dict['Host:']
 		self.dictionary['http-get']['uri'] = ioc_dict['uri']
 		self.dictionary['http-post']['uri'] = ioc_dict['uri']
-		self.dictionary['useragent'] = ioc_dict['useragent']
-
-		self.dictionary['preamble'] = ua
+		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
+		self.dictionary['preamble']['sleeptime'] = ioc_dict['args.sleeptime']
 
 	def write_preamble(self, profile):
-		for k, v in self.dictionary['useragent']:
-			profile.write('set %s "%s;"\n' %(k, v))
+		for k, v in self.dictionary['preamble'].iteritems():
+			if v:
+				profile.write('set %s "%s;"\n' %(k, v))
+			else:
+				break
+
 	def write_http_get(self, profile):
-		for k, v in self.dictionary.get('http-get', []).iteritems():
-			profile.write('set %s %s;\n' %(k, v))
+		profile.write('http-get {\n\turi %s\n\t' %self.dictionary['http-get']['uri'])
+		for k, v in self.dictionary['http-get']['client'].iteritems():
+			if isinstance(v, dict):
+				for key, val in v.iteritems():
+					profile.write('client {\n\t\t%s %s %s;\n\t' %(k, key, val))
+			else:
+				profile.write('%s %s;\n' %(k, v))
 '''
 	def set_header(self, profile):
 
