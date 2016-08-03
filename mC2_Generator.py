@@ -24,7 +24,7 @@ iocs = {
 'Network/UserAgent':'useragent',
 'Network/HTTP_Referr':'Referer',
 'Network/DNS':'??',
-'PortItem/remoteIP':'Host:'
+'PortItem/remoteIP':'Host'
 }
 
 def parse_ioc(ioc_in):
@@ -50,7 +50,7 @@ def print_ioc(root):
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") not in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-
+	
 	return temp_dict
 
 class mk_profile():
@@ -93,13 +93,13 @@ class mk_profile():
 				profile.write('set %s "%s";\n' %(k, v))
 			else:
 				break
-	def write_header(self, d, a_list):
+	def create_header_list(self, d, a_list):
 		for k, v in d.iteritems():
 			if isinstance(v, dict):
 				a_list.append(k)
-				write_header(v, a_list)
+				create_header_list(v, a_list)
 			else:
-				a_list.append({k:v})
+				a_list.append("\"{}\" \"{}\"".format(k, v[0]))
 
 	def write_http_get(self, profile):
 		cl = list()
@@ -109,7 +109,7 @@ class mk_profile():
 		profile.write('http-get {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
 
 		# Write the client section
-		self.write_header(self.dictionary['http-get']['client']['header'], cl)
+		self.create_header_list(self.dictionary['http-get']['client']['header'], cl)
 		profile.write('\tclient {\n') 
 		for i in cl:
 			profile.write('\t\theader %s;\n' %i)
@@ -117,10 +117,10 @@ class mk_profile():
 		profile.write('\t}\n') 
 
 		# Write the server section
-		self.write_header(self.dictionary['http-get']['server']['header'], sl)
+		self.create_header_list(self.dictionary['http-get']['server']['header'], sl)
 		profile.write('\tserver {\n') 
 		for i in sl:
-			profile.write('\t\theader %s;\n' %str(i))
+			profile.write('\t\theader %s;\n' %i)
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
 		profile.write('\t}\n}\n') 
 
@@ -132,7 +132,7 @@ class mk_profile():
 		profile.write('http-post {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
 
 		# Write the client section
-		self.write_header(self.dictionary['http-post']['client']['header'], cl)
+		self.create_header_list(self.dictionary['http-post']['client']['header'], cl)
 		profile.write('\tclient {\n') 
 		for i in cl:
 			profile.write('\t\theader %s;\n' %i)
@@ -141,7 +141,7 @@ class mk_profile():
 		profile.write('\t\t}\n') 
 
 		# Write the server section
-		self.write_header(self.dictionary['http-post']['server']['header'], sl)
+		self.create_header_list(self.dictionary['http-post']['server']['header'], sl)
 		profile.write('\tserver {\n') 
 		for i in sl:
 			profile.write('\t\theader %s;\n' %str(i))
@@ -158,6 +158,7 @@ def main():
 	global cs_dict
 	root = parse_ioc(args.iocFile)
 	cs_dict = print_ioc(root)
+	print cs_dict
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
 		print m.dictionary
