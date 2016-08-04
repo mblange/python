@@ -2,7 +2,7 @@
 
 ###########################################################
 # parse OpenIOC file for IOCs to create CS MC2 Profile
-# Based on: http://www.jeffbryner.com/blog/itsec/pythoniocdump.html
+# OpenIOC parsing stolen from: http://www.jeffbryner.com/blog/itsec/pythoniocdump.html
 # Matt Lange
 # 7-29-2016
 ############################################################
@@ -19,6 +19,7 @@ ap.add_argument('--sleeptime', '-s', help='set sleeptime value for CS', default=
 args = ap.parse_args()
 
 # Dictionary of IOCs that are useful in a CS MC2 Profile config mapped to CS MC2 keywords
+# might be more in the 'UrlHistoryItem' and 'CookieHistoryItem' categories (http://openioc.org/terms/Current.iocterms)
 iocs = {
 'Network/URI':'uri',
 'Network/UserAgent':'useragent',
@@ -32,30 +33,33 @@ def parse_ioc(ioc_in):
 	parse_root = ioco.getroot()
 	return parse_root
 
-def print_ioc(root):
+def create_ioc_dict(root):
 	# Create dictionary to store ioc key-value pairs. defaultdict(list) stores dup keys values as a list 
 	temp_dict = defaultdict(list)
+	
+	# Store values of the IOC keys we care about for MC2 Profiles
+	for i in root.xpath("//*[local-name()='IndicatorItem']"):
+		if i.Context.attrib.get("search") in iocs:
+			temp_dict[iocs[i.Context.attrib.get("search")]].append(i.Content)
+	return temp_dict
+
+def print_ioc(root):
 	print("Description:\n%s: %s"%(root.short_description, root.description))
 	
-	# Print & store values of the IOC keys we care about for MC2 Profiles
+	# Print values of the IOC keys we care about for MC2 Profiles
 	print "\nHere's the IOCs we probably care about for MC2 Profile creation\n"
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-			# and add them to our dictionary
-			temp_dict[iocs[i.Context.attrib.get("search")]].append(i.Content)
 
 	# Print all the remaining IOCs
 	print "\nHere's all the rest of the IOCs in this file\n"
 	for i in root.xpath("//*[local-name()='IndicatorItem']"):
 		if i.Context.attrib.get("search") not in iocs:
 			print('\t%s\t%s\t%s'%(i.getparent().attrib.get("operator"), i.Context.attrib.get("search"),i.Content))
-	
-	return temp_dict
 
 class mk_profile():
 	def __init__(self, ioc_dict, filename): 
-		## create file here?
 		self.profile = '{}.profile'.format(filename)
 		# create dictionary
 		self.dictionary = dict()
@@ -85,12 +89,12 @@ class mk_profile():
 		self.dictionary['http-get']['uri'] = ioc_dict['uri']
 		self.dictionary['http-post']['uri'] = ioc_dict['uri']
 		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
-		self.dictionary['preamble']['sleeptime'] = ioc_dict['args.sleeptime']
+		self.dictionary['preamble']['sleeptime'] = [args.sleeptime]
 
 	def write_preamble(self, profile):
 		for k, v in self.dictionary['preamble'].iteritems():
 			if v:
-				profile.write('set %s "%s";\n' %(k, v))
+				profile.write('set %s "%s";\n' %(k, v[0]))
 			else:
 				break
 	def create_header_list(self, d, a_list):
@@ -98,76 +102,102 @@ class mk_profile():
 			if isinstance(v, dict):
 				a_list.append(k)
 				create_header_list(v, a_list)
+			elif isinstance(v, list):
+				if v:
+					a_list.append("\"{}\" \"{}\"".format(k, v[0]))
 			else:
-				a_list.append("\"{}\" \"{}\"".format(k, v[0]))
+				a_list.append("\"{}\" \"{}\"".format(k, v))
 
 	def write_http_get(self, profile):
-		cl = list()
-		sl = list()
 
 		# Write the http-get container head and URI
-		profile.write('http-get {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
+		if self.dictionary['http-get']['uri']:
+			profile.write('http-get {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
+		else:
+			profile.write('http-get {\n\tset uri "/index/";\n')
 
 		# Write the client section
-		self.create_header_list(self.dictionary['http-get']['client']['header'], cl)
 		profile.write('\tclient {\n') 
+
+		# create and write the http-get client header list
+		cl = list()
+		self.create_header_list(self.dictionary['http-get']['client']['header'], cl)
 		for i in cl:
 			profile.write('\t\theader %s;\n' %i)
+
+		# write standard Cobalt Strike http-get client metadata section
 		profile.write('\t\tmetadata {\n\t\t\tbase64;\n\t\t\theader "Cookie";\n\t\t}\n') 
+
+		# close out the client section
 		profile.write('\t}\n') 
 
 		# Write the server section
-		self.create_header_list(self.dictionary['http-get']['server']['header'], sl)
 		profile.write('\tserver {\n') 
+
+		# create and write the http-get server 'header' list
+		sl = list()
+		self.create_header_list(self.dictionary['http-get']['server']['header'], sl)
 		for i in sl:
 			profile.write('\t\theader %s;\n' %i)
+
+		# write standard Cobalt Strike http-get server output section
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
+
+		# close out the server and http-get sections
 		profile.write('\t}\n}\n') 
 
 	def write_http_post(self, profile):
-		cl = list()
-		sl = list()
 
-		# Write the http-post container head and URI
-		profile.write('http-post {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
+		## Write the http-post container head and URI
+		if self.dictionary['http-post']['uri']:
+			profile.write('http-post {\n\tset uri "%s";\n' %self.dictionary['http-post']['uri'])
+		else:
+			profile.write('http-post {\n\tset uri "/index/";\n')
 
-		# Write the client section
-		self.create_header_list(self.dictionary['http-post']['client']['header'], cl)
+		## Write the http-post client section
 		profile.write('\tclient {\n') 
+
+		# create and write http-post client 'header' list
+		cl = list()
+		self.create_header_list(self.dictionary['http-post']['client']['header'], cl)
 		for i in cl:
 			profile.write('\t\theader %s;\n' %i)
+
+		# write standard Cobalt Strike http-post client id and output sections
 		profile.write('\t\tid {\n\t\t\tparameter "id";\n\t\t}\n')
 		profile.write('\t\toutput {\n\t\t\tprint;\n\t\t}\n')
+
+		# close out the client sections
 		profile.write('\t\t}\n') 
 
-		# Write the server section
-		self.create_header_list(self.dictionary['http-post']['server']['header'], sl)
+		## Write the http-post server section
 		profile.write('\tserver {\n') 
+
+		# create and write the http-post server 'header' list
+		sl = list()
+		self.create_header_list(self.dictionary['http-post']['server']['header'], sl)
 		for i in sl:
 			profile.write('\t\theader %s;\n' %str(i))
-		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
-		profile.write('\t\t}\n}\n') 
-'''
-	def http_post(self):
-		print "http_post"
 
-'''
+		# write standard Cobalt Strike http-post server output section
+		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
+
+		# close out the server and http-post sections
+		profile.write('\t\t}\n}\n') 
 
 def main():
 	global m # for testing only. delete this later 
-	global cs_dict
-	root = parse_ioc(args.iocFile)
-	cs_dict = print_ioc(root)
-	print cs_dict
+	global cs_dict # for testing only. delete this later 
+	ioc_root = parse_ioc(args.iocFile)
+	cs_dict = create_ioc_dict(ioc_root)
+#	print cs_dict # for testing only. delete this later 
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
-		print m.dictionary
+	#	print m.dictionary # for testing only. delete this later 
 		with open(m.profile, 'a') as f:
 			m.write_preamble(f)
 			m.write_http_get(f)
 			m.write_http_post(f)
-	else:
-		pass
 
 if __name__ == "__main__" :
 	main()
