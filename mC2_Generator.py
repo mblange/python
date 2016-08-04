@@ -198,6 +198,8 @@ def main():
 			m.write_preamble(f)
 			m.write_http_get(f)
 			m.write_http_post(f)
+	else:
+		print_ioc(ioc_root)
 
 if __name__ == "__main__" :
 	main()
