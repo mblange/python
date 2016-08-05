@@ -10,7 +10,8 @@
 import lxml.objectify as lo
 from collections import defaultdict
 import argparse
-
+import logging
+logging.basicConfig(format='[+}%(levelname)s:%(message)s', level=logging.DEBUG)
 # Accept arguments. Include option to only parse and print the ioc file not create mc profile 
 ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
 ap.add_argument('iocFile', type=str, help='OpenIOC file')
@@ -82,14 +83,14 @@ class mk_profile():
 		self.dictionary['http-post']['server']['output'] = dict()
 		self.dictionary['http-post']['client']['id'] = dict()
 		# insert values into dictionary
-		self.dictionary['http-get']['client']['header']['Referer'] = ioc_dict['Referer']
-		self.dictionary['http-post']['client']['header']['Referer'] = ioc_dict['Referer']
-		self.dictionary['http-get']['client']['header']['Host'] = ioc_dict['Host']
-		self.dictionary['http-post']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['preamble']['sleeptime'] = [args.sleeptime]
+		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
 		self.dictionary['http-get']['uri'] = ioc_dict['uri']
 		self.dictionary['http-post']['uri'] = ioc_dict['uri']
-		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
-		self.dictionary['preamble']['sleeptime'] = [args.sleeptime]
+		self.dictionary['http-get']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['http-post']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['http-get']['client']['header']['Referer'] = ioc_dict['Referer']
+		self.dictionary['http-post']['client']['header']['Referer'] = ioc_dict['Referer']
 
 	def write_preamble(self, profile):
 		for k, v in self.dictionary['preamble'].iteritems():
@@ -97,6 +98,7 @@ class mk_profile():
 				profile.write('set %s "%s";\n' %(k, v[0]))
 			else:
 				break
+
 	def create_header_list(self, d, a_list):
 		for k, v in d.iteritems():
 			if isinstance(v, dict):
@@ -125,10 +127,8 @@ class mk_profile():
 		for i in cl:
 			profile.write('\t\theader %s;\n' %i)
 
-		# write standard Cobalt Strike http-get client metadata section
+		# write standard Cobalt Strike http-get client metadata section and close 'client' section
 		profile.write('\t\tmetadata {\n\t\t\tbase64;\n\t\t\theader "Cookie";\n\t\t}\n') 
-
-		# close out the client section
 		profile.write('\t}\n') 
 
 		# Write the server section
@@ -140,10 +140,8 @@ class mk_profile():
 		for i in sl:
 			profile.write('\t\theader %s;\n' %i)
 
-		# write standard Cobalt Strike http-get server output section
+		# write standard Cobalt Strike http-get server output section and close the server and http-get sections
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
-
-		# close out the server and http-get sections
 		profile.write('\t}\n}\n') 
 
 	def write_http_post(self, profile):
@@ -179,22 +177,19 @@ class mk_profile():
 		for i in sl:
 			profile.write('\t\theader %s;\n' %str(i))
 
-		# write standard Cobalt Strike http-post server output section
+		# write standard Cobalt Strike http-post server output section and close the server and http-post sections
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
-
-		# close out the server and http-post sections
 		profile.write('\t\t}\n}\n') 
 
 def main():
-	global m # for testing only. delete this later 
-	global cs_dict # for testing only. delete this later 
+	logging.info('Parsing OpenIOC file')
 	ioc_root = parse_ioc(args.iocFile)
+	logging.info('Extracting Cobalt Strike IOCs')
 	cs_dict = create_ioc_dict(ioc_root)
-#	print cs_dict # for testing only. delete this later 
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
-	#	print m.dictionary # for testing only. delete this later 
 		with open(m.profile, 'a') as f:
+			logging.info('Writing Cobalt Strike Profile')
 			m.write_preamble(f)
 			m.write_http_get(f)
 			m.write_http_post(f)
