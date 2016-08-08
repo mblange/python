@@ -10,12 +10,15 @@
 import lxml.objectify as lo
 from collections import defaultdict
 import argparse
+import logging
 
-# Accept arguments. Include option to only parse and print the ioc file not create mc profile 
-ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
-ap.add_argument('iocFile', type=str, help='OpenIOC file')
-ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile.')
-ap.add_argument('--sleeptime', '-s', help='set sleeptime value for CS', default=30000)
+logging.basicConfig(format='[+}%(levelname)s:%(message)s', level=logging.DEBUG)
+
+ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create Cobalt Strike Malleable C2 Profile config files.')
+ap.add_argument('iocFile', type=str, help='OpenIOC file to parse')
+ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile named [file].')
+ap.add_argument('--sleeptime', '-s', help='set sleeptime in miliseconds, default is 30000', default=30000)
+ap.add_argument('--jitter', '-j', help='set jitter in seconds, default value is zero', default=0)
 args = ap.parse_args()
 
 # Dictionary of IOCs that are useful in a CS MC2 Profile config mapped to CS MC2 keywords
@@ -25,7 +28,11 @@ iocs = {
 'Network/UserAgent':'useragent',
 'Network/HTTP_Referr':'Referer',
 'Network/DNS':'Host',
-'PortItem/remoteIP':'??'
+<<<<<<< HEAD
+#'PortItem/remoteIP':'?'
+=======
+#'PortItem/remoteIP':'?'
+>>>>>>> a3f669b8c099a38fc6dca5e3da3aedf9711cce42
 }
 
 def parse_ioc(ioc_in):
@@ -82,14 +89,15 @@ class mk_profile():
 		self.dictionary['http-post']['server']['output'] = dict()
 		self.dictionary['http-post']['client']['id'] = dict()
 		# insert values into dictionary
-		self.dictionary['http-get']['client']['header']['Referer'] = ioc_dict['Referer']
-		self.dictionary['http-post']['client']['header']['Referer'] = ioc_dict['Referer']
-		self.dictionary['http-get']['client']['header']['Host'] = ioc_dict['Host']
-		self.dictionary['http-post']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['preamble']['sleeptime'] = [args.sleeptime]
+		self.dictionary['preamble']['jitter'] = [args.jitter]
+		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
 		self.dictionary['http-get']['uri'] = ioc_dict['uri']
 		self.dictionary['http-post']['uri'] = ioc_dict['uri']
-		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
-		self.dictionary['preamble']['sleeptime'] = [args.sleeptime]
+		self.dictionary['http-get']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['http-post']['client']['header']['Host'] = ioc_dict['Host']
+		self.dictionary['http-get']['client']['header']['Referer'] = ioc_dict['Referer']
+		self.dictionary['http-post']['client']['header']['Referer'] = ioc_dict['Referer']
 
 	def write_preamble(self, profile):
 		for k, v in self.dictionary['preamble'].iteritems():
@@ -97,6 +105,7 @@ class mk_profile():
 				profile.write('set %s "%s";\n' %(k, v[0]))
 			else:
 				break
+
 	def create_header_list(self, d, a_list):
 		for k, v in d.iteritems():
 			if isinstance(v, dict):
@@ -125,10 +134,8 @@ class mk_profile():
 		for i in cl:
 			profile.write('\t\theader %s;\n' %i)
 
-		# write standard Cobalt Strike http-get client metadata section
+		# write standard Cobalt Strike http-get client metadata section and close 'client' section
 		profile.write('\t\tmetadata {\n\t\t\tbase64;\n\t\t\theader "Cookie";\n\t\t}\n') 
-
-		# close out the client section
 		profile.write('\t}\n') 
 
 		# Write the server section
@@ -140,10 +147,8 @@ class mk_profile():
 		for i in sl:
 			profile.write('\t\theader %s;\n' %i)
 
-		# write standard Cobalt Strike http-get server output section
+		# write standard Cobalt Strike http-get server output section and close the server and http-get sections
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
-
-		# close out the server and http-get sections
 		profile.write('\t}\n}\n') 
 
 	def write_http_post(self, profile):
@@ -179,22 +184,19 @@ class mk_profile():
 		for i in sl:
 			profile.write('\t\theader %s;\n' %str(i))
 
-		# write standard Cobalt Strike http-post server output section
+		# write standard Cobalt Strike http-post server output section and close the server and http-post sections
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
-
-		# close out the server and http-post sections
 		profile.write('\t\t}\n}\n') 
 
 def main():
-	global m # for testing only. delete this later 
-	global cs_dict # for testing only. delete this later 
+	logging.info('Parsing OpenIOC file: %s' %args.iocFile)
 	ioc_root = parse_ioc(args.iocFile)
+	logging.info('Extracting Cobalt Strike IOCs')
 	cs_dict = create_ioc_dict(ioc_root)
-#	print cs_dict # for testing only. delete this later 
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
-	#	print m.dictionary # for testing only. delete this later 
 		with open(m.profile, 'a') as f:
+			logging.info('Writing Cobalt Strike Profile file: %s' %m.profile)
 			m.write_preamble(f)
 			m.write_http_get(f)
 			m.write_http_post(f)
