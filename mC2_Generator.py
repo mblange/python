@@ -11,12 +11,14 @@ import lxml.objectify as lo
 from collections import defaultdict
 import argparse
 import logging
+
 logging.basicConfig(format='[+}%(levelname)s:%(message)s', level=logging.DEBUG)
-# Accept arguments. Include option to only parse and print the ioc file not create mc profile 
-ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create CS MC2 Profile config files.')
-ap.add_argument('iocFile', type=str, help='OpenIOC file')
-ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile.')
-ap.add_argument('--sleeptime', '-s', help='set sleeptime value for CS', default=30000)
+
+ap = argparse.ArgumentParser(description='Parse OpenIOC files. Create Cobalt Strike Malleable C2 Profile config files.')
+ap.add_argument('iocFile', type=str, help='OpenIOC file to parse')
+ap.add_argument('--write', '-w', help='Parse and write a CS MC2 Profile named [file].')
+ap.add_argument('--sleeptime', '-s', help='set sleeptime in miliseconds, default is 30000', default=30000)
+ap.add_argument('--jitter', '-j', help='set jitter in seconds, default value is zero', default=0)
 args = ap.parse_args()
 
 # Dictionary of IOCs that are useful in a CS MC2 Profile config mapped to CS MC2 keywords
@@ -25,8 +27,8 @@ iocs = {
 'Network/URI':'uri',
 'Network/UserAgent':'useragent',
 'Network/HTTP_Referr':'Referer',
-'Network/DNS':'??',
-'PortItem/remoteIP':'Host'
+'Network/DNS':'Host',
+#'PortItem/remoteIP':'?'
 }
 
 def parse_ioc(ioc_in):
@@ -84,6 +86,7 @@ class mk_profile():
 		self.dictionary['http-post']['client']['id'] = dict()
 		# insert values into dictionary
 		self.dictionary['preamble']['sleeptime'] = [args.sleeptime]
+		self.dictionary['preamble']['jitter'] = [args.jitter]
 		self.dictionary['preamble']['useragent'] = ioc_dict['useragent']
 		self.dictionary['http-get']['uri'] = ioc_dict['uri']
 		self.dictionary['http-post']['uri'] = ioc_dict['uri']
@@ -182,14 +185,14 @@ class mk_profile():
 		profile.write('\t\t}\n}\n') 
 
 def main():
-	logging.info('Parsing OpenIOC file')
+	logging.info('Parsing OpenIOC file: %s' %args.iocFile)
 	ioc_root = parse_ioc(args.iocFile)
 	logging.info('Extracting Cobalt Strike IOCs')
 	cs_dict = create_ioc_dict(ioc_root)
 	if args.write:
 		m = mk_profile(cs_dict, args.write)
 		with open(m.profile, 'a') as f:
-			logging.info('Writing Cobalt Strike Profile')
+			logging.info('Writing Cobalt Strike Profile file: %s' %m.profile)
 			m.write_preamble(f)
 			m.write_http_get(f)
 			m.write_http_post(f)
