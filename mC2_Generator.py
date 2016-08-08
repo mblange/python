@@ -117,7 +117,11 @@ class mk_profile():
 
 		# Write the http-get container head and URI
 		if self.dictionary['http-get']['uri']:
-			profile.write('http-get {\n\tset uri "%s";\n' %self.dictionary['http-get']['uri'])
+                        # hack because join() doesn't work on 'lxml.objectify.StringElement'
+                        uri_string = ''
+                        for i in self.dictionary['http-get']['uri']:
+                            uri_string = uri_string + str(i) + ' ' 
+			profile.write('http-get {\n\t\tset uri "%s";\n' %uri_string)
 		else:
 			profile.write('http-get {\n\tset uri "/index/";\n')
 
@@ -131,17 +135,20 @@ class mk_profile():
 			profile.write('\t\theader %s;\n' %i)
 
 		# write standard Cobalt Strike http-get client metadata section and close 'client' section
-		profile.write('\t\tmetadata {\n\t\t\tbase64;\n\t\t\theader "Cookie";\n\t\t}\n') 
+		profile.write('\t\tmetadata {\n\t\t\tbase64;\n\t\t\tprepend "user=";\n\t\t\theader "Cookie";\n\t\t}\n') 
 		profile.write('\t}\n') 
 
 		# Write the server section
 		profile.write('\tserver {\n') 
 
 		# create and write the http-get server 'header' list
-		sl = list()
-		self.create_header_list(self.dictionary['http-get']['server']['header'], sl)
-		for i in sl:
-			profile.write('\t\theader %s;\n' %i)
+                if self.dictionary['http-get']['server']['header']:
+		    sl = list()
+		    self.create_header_list(self.dictionary['http-get']['server']['header'], sl)
+		    for i in sl:
+		    	profile.write('\t\theader %s;\n' %str(i))
+                else:
+                    profile.write('\t\theader "Content-Type" "text/plain";\n')
 
 		# write standard Cobalt Strike http-get server output section and close the server and http-get sections
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
@@ -175,29 +182,32 @@ class mk_profile():
 		profile.write('\tserver {\n') 
 
 		# create and write the http-post server 'header' list
-		sl = list()
-		self.create_header_list(self.dictionary['http-post']['server']['header'], sl)
-		for i in sl:
-			profile.write('\t\theader %s;\n' %str(i))
+                if self.dictionary['http-post']['server']['header']:
+                    sl = list()
+                    self.create_header_list(self.dictionary['http-post']['server']['header'], sl)
+                    for i in sl:
+                        profile.write('\t\theader %s;\n' %str(i))
+                else:
+                    profile.write('\t\theader "Content-Type" "text/plain";\n')
 
 		# write standard Cobalt Strike http-post server output section and close the server and http-post sections
 		profile.write('\t\toutput {\n\t\t\tbase64;\n\t\t\tprint;\n\t\t}\n') 
 		profile.write('\t\t}\n}\n') 
 
 def main():
-	logging.info('Parsing OpenIOC file: %s' %args.iocFile)
-	ioc_root = parse_ioc(args.iocFile)
-	logging.info('Extracting Cobalt Strike IOCs')
-	cs_dict = create_ioc_dict(ioc_root)
-	if args.write:
-		m = mk_profile(cs_dict, args.write)
-		with open(m.profile, 'a') as f:
-			logging.info('Writing Cobalt Strike Profile file: %s' %m.profile)
-			m.write_preamble(f)
-			m.write_http_get(f)
-			m.write_http_post(f)
-	else:
-		print_ioc(ioc_root)
+    logging.info('Parsing OpenIOC file: %s' %args.iocFile)
+    ioc_root = parse_ioc(args.iocFile)
+    logging.info('Extracting Cobalt Strike IOCs')
+    cs_dict = create_ioc_dict(ioc_root)
+    if args.write:
+        m = mk_profile(cs_dict, args.write)
+	with open(m.profile, 'a') as f:
+	    logging.info('Writing Cobalt Strike Profile file: %s' %m.profile)
+	    m.write_preamble(f)
+	    m.write_http_get(f)
+	    m.write_http_post(f)
+    else:
+	print_ioc(ioc_root)
 
 if __name__ == "__main__" :
 	main()
