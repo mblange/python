@@ -24,8 +24,8 @@ iocs = {
 'Network/URI':'uri',
 'Network/UserAgent':'useragent',
 'Network/HTTP_Referr':'Referer',
-'Network/DNS':'??',
-'PortItem/remoteIP':'Host'
+'Network/DNS':'Host',
+'PortItem/remoteIP':'??'
 }
 
 def parse_ioc(ioc_in):
