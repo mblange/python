@@ -200,12 +200,16 @@ def main():
     logging.info('Extracting Cobalt Strike IOCs')
     cs_dict = create_ioc_dict(ioc_root)
     if args.write:
-        m = mk_profile(cs_dict, args.write)
-	with open(m.profile, 'a') as f:
-	    logging.info('Writing Cobalt Strike Profile file: %s' %m.profile)
-	    m.write_preamble(f)
-	    m.write_http_get(f)
-	    m.write_http_post(f)
+        if cs_dict:
+            m = mk_profile(cs_dict, args.write)
+	    with open(m.profile, 'a') as f:
+	        logging.info('Writing Cobalt Strike Profile file: %s' %m.profile)
+	        m.write_preamble(f)
+	        m.write_http_get(f)
+	        m.write_http_post(f)
+        else:
+            logging.error('No Cobalt Strike IOCs present in the file: %s' %args.iocFile)
+            print_ioc(ioc_root)
     else:
 	print_ioc(ioc_root)
 
