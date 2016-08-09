@@ -13,7 +13,6 @@ except ImportError, e:
 	exit(1)
 
 def get_token(session, url):
-    # make initial request to get token
     gr = session.get(url, verify=False)
     # access response and retrieve anti-csurf token
     tree = lh.fromstring(gr.content)
@@ -33,7 +32,7 @@ def post_ssn(session, url, data):
             print 'Bad SSN: %s' %data['taxPayerId']
             print pr.status_code, pr.headers['location']
     except:
-        location = "No 'Location' Header was returned by the server"
+        print "No 'Location' Header was returned by the server"
 
 def main():
     # establish vars
