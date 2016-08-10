@@ -1,0 +1,8 @@
+CS Forwarder(mac):
+socat UDP4-RECVFROM:53,reuseaddr,fork tcp:localhost:5353
+
+
+CS Team Server(ubuntu):
+ssh -R 5353:localhost:5353 root@csforwarder.com
+socat TCP4-LISTEN:5353,reuseaddr,fork UDP:localhost:53
+dnsmasq -d --address=/example.com/10.6.6.6
