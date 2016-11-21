@@ -23,5 +23,7 @@ tactic = list()
 
 for data in soup.table.find_all('tr'):
     if data:
-        tactic = list.append(data.find_all(class_="Tactics")[0].a.string)
-        print tactic
+        t= str(data.find_all(class_="Tactics")[0].a.string)
+        print t ## missing "privilege escalation" !!
+        tactic.append(t)
+print set(tactic)
