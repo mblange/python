@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import lxml
 import csv
+import time
 
 # Get MITRE page with techniques, save response, and parse
 res = requests.get("https://attack.mitre.org/wiki/All_Techniques")
@@ -31,6 +32,7 @@ for row in table.findAll('tr')[0:]:
     record = [Technique, Tactic, ID, Description]
     csv_out.append(record)
 
-with open('mitre_attack.csv', "wb") as out_file:
+date = time.strftime("%Y-%m-%d")
+with open('mitre_data-%s.csv' %date, "wb") as out_file:
     wr = csv.writer(out_file, dialect='excel')
     wr.writerows(csv_out)
