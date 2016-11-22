@@ -19,11 +19,14 @@ for header in soup.table.find_all('th'):
 
 print headers
 
-tactic = list()
+tactic = dict()
+table = soup.find("table")
+for row in table.findAll('tr')[0:]:
+    col = row.findAll('td')
+    Technique = str(col[0].string)
+    Tactic = str(col[1].string)
+    ID = str(col[2].string)
+    description = str(col[3].string)
 
-for data in soup.table.find_all('tr'):
-    if data:
-        t= str(data.find_all(class_="Tactics")[0].a.string)
-        print t ## missing "privilege escalation" !!
-        tactic.append(t)
-print set(tactic)
+    record = (Technique, Tactic, ID, description)
+    print "|".join(record)
