@@ -1,32 +1,36 @@
 #!/usr/bin/env python
 import requests
 from bs4 import BeautifulSoup
+import lxml
+import csv
 
-# Get MITRE page with techniques
+# Get MITRE page with techniques, save response, and parse
 res = requests.get("https://attack.mitre.org/wiki/All_Techniques")
-
-# save the response
 html_doc = res.text
-#print doc
+soup = BeautifulSoup(html_doc, 'lxml')
 
-soup = BeautifulSoup(html_doc, 'html.parser')
+# establish list
+csv_out = list()
 
-headers = dict()
+# Parse and establish table headers (Name, Tactics, ID, Technical Description)
+headerList = list()
 
-# Parse and establish table header dictionary (Name, Tactics, ID, Technical Description)
 for header in soup.table.find_all('th'):
-    headers[str(header.a.string)] = dict()
+    headerList.append(str(header.a.string))
 
-print headers
+csv_out.append(headerList)
 
-tactic = dict()
+# Parse and establish table data (Name, Tactics, ID, Technical Description)
 table = soup.find("table")
 for row in table.findAll('tr')[0:]:
     col = row.findAll('td')
-    Technique = str(col[0].string)
-    Tactic = str(col[1].string)
-    ID = str(col[2].string)
-    description = str(col[3].string)
+    Technique = str(col[0].string).replace('\n', '')
+    Tactic = str(col[1].get_text(", ")).replace('\n', '')
+    ID = str(col[2].string).replace('\n', '')
+    Description = str(col[3].get_text(" ")).replace('\n', '')
+    record = [Technique, Tactic, ID, Description]
+    csv_out.append(record)
 
-    record = (Technique, Tactic, ID, description)
-    print "|".join(record)
+with open('mitre_attack.csv', "wb") as out_file:
+    wr = csv.writer(out_file, dialect='excel')
+    wr.writerows(csv_out)
