@@ -9,9 +9,10 @@ quote('/test', safe='')
 
 # Argparse 
 ap = argparse.ArgumentParser(description='Pull data from Mitre\'s ATT&CK site.')
-ap.add_argument('--Technique', '-T', help='Technique')
-ap.add_argument('--tactic', '-t', help='tactic')
-ap.add_argument('--dump', '-d', action='store_true', help='Dump all data')
+ap.add_argument('--Tactic', '-t', help='Tactic')
+ap.add_argument('--technique', '-T', help='technique')
+ap.add_argument('--display', '-d', help='tactic')
+ap.add_argument('--Dump', '-D', action='store_true', help='Dump all data')
 args = ap.parse_args()
 
 ## query
@@ -20,12 +21,13 @@ args = ap.parse_args()
 
 # Variables for Mitre
 # Replace this with functions to accept args 
-if args.dump:
-	query = '%5B%5BCategory%3ATechnique%5D%5D%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20display%20name%7Climit%3D9999'
+if args.Dump:
+	query = '%5B%5BCategory%3ATechnique%5D%5D%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20display%20name%7C%3FHas%20technical%20description%7Climit%3D9999'
 host = 'https://attack.mitre.org'
 url = '/api.php?action=ask&format=json&query=%s' %query
-tactic = args.tactic
-technique = args.Technique
+tactic = args.Tactic
+technique = args.technique
+display_parameter = args.display
 
 # create list of arguments
 arg_list = []
@@ -37,16 +39,18 @@ def url_encode(arg):
 
 # this will be a function that populates query based on arguments from argparse
 def mk_query(arg_list):
-	q = url_encode(arg)
-	
+	for arg in arg_list:
+		continue
+
 # Request data
 r = requests.get('%s%s%s'%(host, url, query))
 
 # Parse JSON response
-#print r.json()
 res = r.json()['query']['results']
-print res['Technique/T1009']
 #print res
+for i in res:
+	p = res[i]['printouts']
+	print 'Tactic: %s\n%s: %s\n%s\n' %(p['Has tactic'][0]['fulltext'], i, p['Has display name'][0], p['Has technical description'][0])
 
 
 # Function to retrieve all data
