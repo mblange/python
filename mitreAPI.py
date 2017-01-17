@@ -19,6 +19,7 @@ args = ap.parse_args()
 # Variables for Mitre
 host = 'https://attack.mitre.org/api.php?action=ask&format=json&query='
 data_query = '%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20alias%7C%3FHas%20display%20name%7C%3FHas%20platform%7C%3FHas%20technical%20description%7Climit%3D9999'
+list_query = '%5B%5BCategory%3ATechnique%5D%5D%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20display%20name%7Climit%3D9999'
 
 if args.Tactic:
 	Tactic = args.Tactic.replace(',', '||')
@@ -27,7 +28,7 @@ if args.technique:
 if args.tid:
 	tech_id = args.tid.replace(',', '||')
 if args.list_all:
-	query = '%5B%5BCategory%3ATechnique%5D%5D%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20display%20name%7Climit%3D9999'
+	query = list_query
 
 # Populate query based on arguments from argparse
 def mk_query(arg, arg_type):
