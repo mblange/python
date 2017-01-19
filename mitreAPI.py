@@ -35,10 +35,10 @@ def mk_query(arg, arg_type):
 	if arg_type == 'Tactic':
 		Tactic = "[[Has tactic::%s]]" %(arg)
 		return Tactic
-	if arg_type == technique:
+	if arg_type == 'technique':
 		technique = "[[Has display name::%s]]" %(arg)
 		return technique
-	if arg_type == tech_id:
+	if arg_type == 'tech_id':
 		tech_id = "[[Has ID::%s]]" %(arg)
 		return tech_id
 
