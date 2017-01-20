@@ -4,6 +4,8 @@
 import argparse
 import requests
 import urllib
+import csv
+import time
 
 # Argparse 
 ap = argparse.ArgumentParser(description='Pull data from Mitre\'s ATT&CK site.')
