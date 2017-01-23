@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-## configurable query page selectors? https://www.semantic-mediawiki.org/wiki/Help:Selecting_pages
-## configurable printout statemetns? https://www.semantic-mediawiki.org/wiki/Help:Displaying_information 
 import argparse
 import requests
 import urllib
@@ -11,12 +9,10 @@ import time
 ap = argparse.ArgumentParser(description='Pull data from Mitre\'s ATT&CK site.')
 ap.add_argument('--Tactic', '-T', help='Dump all in Tactic')
 ap.add_argument('--technique', '-t', help='Get technique by name')
-ap.add_argument('--tid', '-i', help='Get technique by id')
+ap.add_argument('--id', '-i', help='Get technique by id')
 ap.add_argument('--dump', '-d', action='store_true', help='Dump all data')
 ap.add_argument('--list_all', '-l', action='store_true', help='List all Tactics and Techniques')
 args = ap.parse_args()
-
-#TODO: Dump all [x], Dump all techniques in Tactic [ ], Get technique by: Name [ ], ID [ ], List Tactics [ ], List techniques [ ].
 
 # Variables for Mitre
 host = 'https://attack.mitre.org/api.php?action=ask&format=json&query='
@@ -27,8 +23,8 @@ if args.Tactic:
 	Tactic = args.Tactic.replace(',', '||')
 if args.technique:
 	technique = args.technique.replace(',', '||')
-if args.tid:
-	tech_id = args.tid.replace(',', '||')
+if args.id:
+	tech_id = args.id.replace(',', '||')
 if args.list_all:
 	query = list_query
 
@@ -48,29 +44,6 @@ def mk_query(arg, arg_type):
 def url_encode(arg):
 	return urllib.quote('%s' %arg, safe='')
 
-# Construct query
-if args.dump:
-	query = '%5B%5BCategory%3ATechnique%5D%5D' + data_query
-elif args.Tactic:
-	u_query = mk_query(Tactic, 'Tactic')
-	query = url_encode(u_query)
-elif args.technique:
-	u_query = mk_query(technique, 'technique')
-	query = url_encode(u_query)
-elif args.tid:
-	u_query = mk_query(tech_id, 'tech_id')
-	query = url_encode(u_query)
-elif args.list_all:
-	print 'Listing all tecnique/tactics'
-else:
-	print 'Invalid arguments'
-	exit(0)
-query = query + data_query
-
-# Request data and parse JSON response
-r = requests.get('%s%s'%(host, query))
-res = r.json()['query']['results']
-
 # output to csv
 def mk_csv_lst():
 	csv_out = list()
@@ -79,8 +52,12 @@ def mk_csv_lst():
 		tactic = str(p['Has tactic'][0]['fulltext'])
 		technique = str(p['Has display name'][0])
 		tid = str(p['Has ID'][0])
-		description = str(p['Has technical description'][0])
-		data = [tactic, technique, tid, description]
+                if not args.list_all:
+		    description = str(p['Has technical description'][0])
+		    data = [tactic, technique, tid, description]
+                else:
+                    print 'Tactic: %s\nID:%s\nTechnique: %s\n' %(tactic, tid, technique)
+		    data = [tactic, technique, tid]
 		csv_out.append(data)
 	print csv_out
 	return csv_out
@@ -92,8 +69,29 @@ def mk_csv_file(csv_out):
 		wr = csv.writer(out_file, dialect='excel')
 		wr.writerows(csv_out)
 
-if not args.list_all:
-	c = mk_csv_lst()
-	mk_csv_file(c)
+# Construct query
+if args.dump:
+	query = '%5B%5BCategory%3ATechnique%5D%5D' + data_query
+elif args.Tactic:
+	u_query = mk_query(Tactic, 'Tactic')
+	query = url_encode(u_query) + data_query
+elif args.technique:
+	u_query = mk_query(technique, 'technique')
+	query = url_encode(u_query) + data_query
+elif args.id:
+	u_query = mk_query(tech_id, 'tech_id')
+	query = url_encode(u_query) + data_query
+elif args.list_all:
+        query = list_query
 else:
-	print query
+	print 'Invalid arguments'
+	exit(0)
+
+# Request data and parse JSON response
+r = requests.get('%s%s'%(host, query))
+res = r.json()['query']['results']
+
+c = mk_csv_lst()
+
+if not args.list_all:
+	mk_csv_file(c)
