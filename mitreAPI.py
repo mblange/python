@@ -20,7 +20,7 @@ args = ap.parse_args()
 
 # Variables for Mitre
 host = 'https://attack.mitre.org/api.php?action=ask&format=json&query='
-data_query = '%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20alias%7C%3FHas%20display%20name%7C%3FHas%20platform%7C%3FHas%20technical%20description%7Climit%3D9999'
+data_query = '%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20display%20name%7C%3FHas%20technical%20description%7Climit%3D9999'
 list_query = '%5B%5BCategory%3ATechnique%5D%5D%7C%3FHas%20tactic%7C%3FHas%20ID%7C%3FHas%20display%20name%7Climit%3D9999'
 
 if args.Tactic:
@@ -60,21 +60,40 @@ elif args.technique:
 elif args.tid:
 	u_query = mk_query(tech_id, 'tech_id')
 	query = url_encode(u_query)
+elif args.list_all:
+	print 'Listing all tecnique/tactics'
 else:
+	print 'Invalid arguments'
 	exit(0)
 query = query + data_query
 
-# Request data
+# Request data and parse JSON response
 r = requests.get('%s%s'%(host, query))
-
-# Parse JSON response
 res = r.json()['query']['results']
-#print res
-if not args.list_all:
+
+# output to csv
+def mk_csv_lst():
+	csv_out = list()
 	for i in res:
 		p = res[i]['printouts']
-		print 'Tactic: %s\n%s: %s\nAlias: %s\n%s\n' %(p['Has tactic'][0]['fulltext'], i, p['Has display name'][0], p['Has alias'], p['Has technical description'][0])
+		tactic = str(p['Has tactic'][0]['fulltext'])
+		technique = str(p['Has display name'][0])
+		tid = str(p['Has ID'][0])
+		description = str(p['Has technical description'][0])
+		data = [tactic, technique, tid, description]
+		csv_out.append(data)
+	print csv_out
+	return csv_out
+
+# Function to output data to csv
+def mk_csv_file(csv_out):
+	date = time.strftime("%Y-%m-%d")
+	with open('mitre_data-%s.csv' %date, "wb") as out_file:
+		wr = csv.writer(out_file, dialect='excel')
+		wr.writerows(csv_out)
+
+if not args.list_all:
+	c = mk_csv_lst()
+	mk_csv_file(c)
 else:
 	print query
-
-# Function to output data (to csv?)
