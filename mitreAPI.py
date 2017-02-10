@@ -50,6 +50,9 @@ def mk_csv_lst():
 	for i in res:
 		p = res[i]['printouts']
 		tactic = str(p['Has tactic'][0]['fulltext'])
+                #tactic = list()
+                #for t in p['Has tactic']:
+                    #tactic.append(str(t['fulltext']))
 		technique = str(p['Has display name'][0])
 		tid = str(p['Has ID'][0])
                 if not args.list_all:
