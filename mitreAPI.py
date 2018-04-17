@@ -47,6 +47,8 @@ def url_encode(arg):
 # output to csv
 def mk_csv_lst():
 	csv_out = list()
+        headers = ['Tactic','Technique','ID','Technical Description']
+	csv_out.append(headers)
 	for i in res:
 		p = res[i]['printouts']
 		tactic = str(p['Has tactic'][0]['fulltext'])
@@ -62,7 +64,7 @@ def mk_csv_lst():
                     print 'Tactic: %s\nID:%s\nTechnique: %s\n' %(tactic, tid, technique)
 		    data = [tactic, technique, tid]
 		csv_out.append(data)
-	print csv_out
+	#print csv_out
 	return csv_out
 
 # Function to output data to csv
